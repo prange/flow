@@ -23,19 +23,6 @@ class EventChains(  ) {
 	def query( pred : EventChain ⇒ Boolean ) = io { chains.values.filter( pred ) }
 }
 
-class Processes {
-	val processes = ArrayBuffer[EventChain]()
-
-	def record( chains : Iterable[EventChain] ) = io[Unit] {
-		for ( chain ← chains ) yield ( processes += chain )
-	}
-
-	def query(pred:EventChain=>Boolean) = io { processes.view.filter(pred).toIterable }
-
-	def clear:IO[Unit] = io { processes.clear }
-
-}
-
 case class EventChain( id : String, list : List[Event] ) {
 
 	def append( e : Event ) = EventChain( id, e :: list )

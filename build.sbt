@@ -6,18 +6,31 @@ organization := "com.fourspark"
 
 scalaVersion := "2.9.0-1"
 
+scalacOptions := Seq("-deprecation", "-unchecked")
+
+seq(webSettings :_*)
 
 libraryDependencies ++= Seq(
-"org.scalatra" %% "scalatra-specs2" % "2.0.0.M4" % "test",
-// Pick your favorite slf4j binding
-"ch.qos.logback" % "logback-classic" % "0.9.25" % "runtime",
-//Solr, not yet..."org.apache.solr" % "solr-solrj" % "3.2.0",
-"org.scalaz" %% "scalaz-core" % "6.0.1",
-"joda-time" % "joda-time" % "1.6.2",
-"com.h2database" % "h2" % "1.3.160",
-"org.neo4j" % "neo4j" % "1.5.M01",
-"org.apache.lucene" % "lucene-core" % "3.3.0",
- "com.codecommit" %% "anti-xml" % "0.3"
+	// Pick your favorite slf4j binding
+	"ch.qos.logback" % "logback-classic" % "0.9.25" % "runtime",
+	//Solr, not yet..."org.apache.solr" % "solr-solrj" % "3.2.0",
+	"joda-time" % "joda-time" % "1.6.2",
+	"com.h2database" % "h2" % "1.3.160",
+	"org.neo4j" % "neo4j" % "1.5.M01",
+	"org.apache.lucene" % "lucene-core" % "3.3.0",
+	"com.codecommit" %% "anti-xml" % "0.3",
+	"net.databinder" %% "unfiltered-filter" % "0.5.0",
+	"net.databinder" %% "unfiltered-spec" % "0.5.0" % "test",
+	"net.databinder" %% "unfiltered-json" % "0.5.0",
+	"javax.servlet" % "servlet-api" % "2.3" % "provided",
+	"org.eclipse.jetty" % "jetty-webapp" % "7.3.0.v20110203" % "container",
+	"joda-time" % "joda-time" % "1.6.2",
+	"org.scalaz" %% "scalaz-core" % "6.0.2",
+	"org.specs2" %% "specs2" % "1.4",
+	"com.google.gdata" % "gdata-java-client" % "1.40.0.atlassian-2",
+	"com.google.appengine"%"appengine-api-1.0-sdk"%"1.5.5",
+	"com.google.appengine"%"appengine-testing"%"1.5.5",
+	"com.google.appengine"%"appengine-api-stubs"%"1.5.5"
 )
   
   

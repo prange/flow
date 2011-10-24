@@ -20,7 +20,7 @@ object App {
 
 	def run( filename : String ) = {
 
-		val events = Parser.parseFile(filename)
+		val events = Parser.parseFile( filename )
 
 		val observations = events.map( Parser.createEventList ).flatten
 
@@ -30,14 +30,13 @@ object App {
 
 		register.unsafePerformIO
 
-		val chain = flow.handle( BuildChain( e ⇒ true ,e=>e.values("epc") ) )
+		val chain = flow.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) )
 
 		chain.unsafePerformIO
 
-		val build = flow.handle( BuildProcess( c ⇒ true, Nil ) )
+		val build = flow.handle( BuildProcess( c ⇒ true, Nil, p ⇒ p ) )
 
 		build.unsafePerformIO
-		
 
 	}
 }  

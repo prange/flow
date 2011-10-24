@@ -17,9 +17,9 @@ case class AddEnrichment( e : Enricher ) extends Control
 
 case class BuildChain( pred : Event ⇒ Boolean, id : Event ⇒ String ) extends Control
 
-case class BuildProcess( query : EventChain ⇒ Boolean, cutpoint : List[CutPoint] ) extends Control
+case class BuildProcess( query : EventChain ⇒ Boolean, cutpoint : List[CutPoint], enricher: Process=>Process ) extends Control
 
-case class PredicateProcessQuery( pred : EventChain ⇒ Boolean ) extends ProcessQuery
+case class PredicateProcessQuery( pred : Process ⇒ Boolean ) extends ProcessQuery
 
 case class PredicateEventQuery( pred : Event ⇒ Boolean ) extends EventQuery
 

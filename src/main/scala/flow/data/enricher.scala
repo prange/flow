@@ -41,7 +41,7 @@ class ConditionalEnricher( val id : String, pred : Event ⇒ Boolean, f : Event 
 
 }
 
-case class WeekdayEnricher extends Enricher {
+case class WeekdayEnricher() extends Enricher {
 
 	val id = "weekday"
 

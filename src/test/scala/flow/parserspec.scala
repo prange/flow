@@ -52,7 +52,7 @@ class FlowSpec extends Specification {
 
 			flow.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 
-			flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ) ) ).unsafePerformIO
+			flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ),p=>p ) ).unsafePerformIO
 
 			flow.processes.processes.size must be > 0
 		}
@@ -69,17 +69,34 @@ class FlowSpec extends Specification {
 
 			flow.handle( BuildChain( (e:Event) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 
-			flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ) ) ).unsafePerformIO
+			flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ),p=>p ) ).unsafePerformIO
 
 			val result = flow.queryProcess( PredicateProcessQuery( e ⇒ true ) ).unsafePerformIO
 
-			println( result.head )
-			println( result.tail.head )
-			
 			result.size should be > 0
 		}
-	}
+		
+		"Enrich processes" in{
+			val observations = parseObservations()
+			
+			val flow = new Data()
+			
+			flow.handle(AddEnrichment(WeekdayEnricher())).unsafePerformIO
+			
+			observations.map( flow.handle ).sequence.unsafePerformIO
 
+			flow.handle( BuildChain( (e:Event) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
+
+			flow.handle( BuildProcess( c ⇒ true, List( ),p=>p ) ).unsafePerformIO
+
+			val result = flow.queryProcess( PredicateProcessQuery( e ⇒ true ) ).unsafePerformIO
+			
+			val enriched = result.map(Process.flatter).map(Process.elapsedTime("disposition","received_store","inactive"))
+			println( enriched.head )
+			enriched.size should be > 0
+		}
+	}
+	
 	def parseObservations() = {
 		val events = Parser.parseFile( filename )
 
