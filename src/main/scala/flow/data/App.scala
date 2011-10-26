@@ -26,7 +26,7 @@ object App {
 
 		val flow = new Data()
 
-		val register = observations.map( flow.handle ).sequence
+		val register = flow.handle( EventObservation( observations ) )
 
 		register.unsafePerformIO
 

@@ -41,8 +41,9 @@ class RunningEventLog(val list : ArrayBuffer[Event] ) extends EventLog {
 		( new NonrunningEventLog( list ), none[String] )
 	}
 
-	def record( event : Event) :IO[Unit] = io {
-		list += event
+	def record( event : Seq[Event]) = io {
+		list ++ event
+		"ok".success[String]
 	}
 	
 	

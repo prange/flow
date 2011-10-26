@@ -21,13 +21,13 @@ class FlowSpec extends Specification {
 		"Contain ids" in {
 			val observations = parseObservations()
 
-			observations.map( _.e.values.get( "epc" ) ).filter( _.isEmpty ).size mustEqual 0
+			observations.map( _.values.get( "epc" ) ).filter( _.isEmpty ).size mustEqual 0
 		}
 
 		"Store events in eventStore" in {
 			val observations = parseObservations()
 			val flow = new Data()
-			observations.map( flow.handle ).sequence.unsafePerformIO
+			 flow.handle( EventObservation( observations ) ).unsafePerformIO
 
 			flow.eventlog.list.size mustEqual observations.size
 		}
@@ -36,7 +36,7 @@ class FlowSpec extends Specification {
 
 			val observations = parseObservations()
 			val flow = new Data()
-			observations.map( flow.handle ).sequence.unsafePerformIO
+		 flow.handle( EventObservation( observations ) ).unsafePerformIO
 
 			flow.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 
@@ -48,7 +48,7 @@ class FlowSpec extends Specification {
 
 			val observations = parseObservations()
 			val flow = new Data()
-			observations.map( flow.handle ).sequence.unsafePerformIO
+			 flow.handle( EventObservation( observations ) ).unsafePerformIO
 
 			flow.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 
@@ -65,7 +65,7 @@ class FlowSpec extends Specification {
 			
 			flow.handle(AddEnrichment(WeekdayEnricher())).unsafePerformIO
 			
-			observations.map( flow.handle ).sequence.unsafePerformIO
+			 flow.handle( EventObservation( observations ) ).unsafePerformIO
 
 			flow.handle( BuildChain( (e:Event) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 
@@ -83,7 +83,7 @@ class FlowSpec extends Specification {
 			
 			flow.handle(AddEnrichment(WeekdayEnricher())).unsafePerformIO
 			
-			observations.map( flow.handle ).sequence.unsafePerformIO
+			 flow.handle( EventObservation( observations ) ).unsafePerformIO
 
 			flow.handle( BuildChain( (e:Event) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 

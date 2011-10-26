@@ -15,8 +15,9 @@ class Enrichments {
 
 	private val enrichments = Array[Enricher]()
 
-	def add( enr : Enricher ) = io[Unit] {
+	def add( enr : Enricher ) = io {
 		enrichments :+ enr
+		"ok".success[String]
 	}
 
 	def remove( id : String ) = io[Unit] {

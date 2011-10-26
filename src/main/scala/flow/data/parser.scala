@@ -23,14 +23,21 @@ object Parser {
 		val events = elem \\ "ObjectEvent"
 		events
 	}
-	
-	def createEventList( elem : Elem ) : List[EventObservation] = {
-		val tags = elem \\ "epc"
-		tags.map( createEvent( elem ) ).toList
+
+	def parseReader( input : java.io.Reader ) = {
+		val parser = new StAXParser()
+		val elem = parser.fromReader( input )
+		val events = elem \\ "ObjectEvent"
+		events.flatMap( Parser.createEventList )
 	}
 
-	def createEvent( parent : Elem )( elem : Elem ) : EventObservation = {
-		val epcO = elem \ text headOption
+	def createEventList( elem : Elem ) = {
+		val tags = elem \\ "epc"
+		tags.map( createEvent( elem ) )
+	}
+
+	def createEvent( parent : Elem )( epcTag : Elem ) : Event = {
+		val epcO = epcTag \ text headOption
 		val eventTimeO = parent.\( "eventTime" ).\( text ).headOption.map( dateTimeParser )
 		val eventTimeZoneOffsetO = parent \ "eventTimeZoneOffset" \ text headOption //This is not used in Hrafn data...
 		val actionO = parent \ "action" \ text headOption
@@ -56,6 +63,6 @@ object Parser {
 
 		val updatedEvent = event.map( updateEvent ) getOrElse ( Event( Time.now ) )
 
-		EventObservation( updatedEvent )
+		updatedEvent
 	}
 }

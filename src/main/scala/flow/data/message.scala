@@ -11,7 +11,7 @@ trait EventQuery extends Message
 
 trait Control extends Message
 
-case class EventObservation( e : Event ) extends Control
+case class EventObservation( e : Seq[Event] ) extends Control
 
 case class AddEnrichment( e : Enricher ) extends Control
 
