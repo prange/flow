@@ -27,8 +27,9 @@ libraryDependencies ++= Seq(
 	"joda-time" % "joda-time" % "1.6.2",
 	"org.scalaz" %% "scalaz-core" % "6.0.2",
 	"org.specs2" %% "specs2" % "1.4",
-	"org.apache.mahout" % "mahout-core" % "0.5"
+	"weka" % "weka" % "3.6.3"
 )
+//	"org.apache.mahout" % "mahout-core" % "0.6-SNAPSHOT",
   
   
 testOptions := Seq(Tests.Filter(s => Seq("Spec", "Unit").exists(s.endsWith(_))))
@@ -41,5 +42,9 @@ resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 resolvers += "Sonatype Nexus" at "https://oss.sonatype.org/content/repositories/central"
 
 resolvers += "Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
+resolvers += "Apache Snapshots" at "https://repository.apache.org/content/repositories/snapshots"
+
+resolvers += "Compass Labs" at "http://build.compasslabs.com/maven/content/repositories/thirdparty"
 
 resolvers += "Maven" at "http://repo1.maven.org/maven2/"
