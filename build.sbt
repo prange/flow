@@ -26,7 +26,8 @@ libraryDependencies ++= Seq(
 	"org.eclipse.jetty" % "jetty-webapp" % "7.3.0.v20110203" % "container",
 	"joda-time" % "joda-time" % "1.6.2",
 	"org.scalaz" %% "scalaz-core" % "6.0.2",
-	"org.specs2" %% "specs2" % "1.4"
+	"org.specs2" %% "specs2" % "1.4",
+	"org.apache.mahout" % "mahout" % "0.5"
 )
   
   
