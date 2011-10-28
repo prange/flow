@@ -27,10 +27,6 @@ libraryDependencies ++= Seq(
 	"joda-time" % "joda-time" % "1.6.2",
 	"org.scalaz" %% "scalaz-core" % "6.0.2",
 	"org.specs2" %% "specs2" % "1.4",
-	"com.google.gdata" % "gdata-java-client" % "1.40.0.atlassian-2",
-	"com.google.appengine"%"appengine-api-1.0-sdk"%"1.5.5",
-	"com.google.appengine"%"appengine-testing"%"1.5.5",
-	"com.google.appengine"%"appengine-api-stubs"%"1.5.5"
 )
   
   
