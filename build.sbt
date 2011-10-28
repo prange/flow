@@ -27,7 +27,7 @@ libraryDependencies ++= Seq(
 	"joda-time" % "joda-time" % "1.6.2",
 	"org.scalaz" %% "scalaz-core" % "6.0.2",
 	"org.specs2" %% "specs2" % "1.4",
-	"org.apache.mahout" % "mahout" % "0.5"
+	"org.apache.mahout" % "mahout-core" % "0.5"
 )
   
   
