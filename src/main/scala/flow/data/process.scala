@@ -37,10 +37,10 @@ object Process {
 	def flatter : Process ⇒ Process = FlattenProcess
 
 	def elapsedTime( key : String, from : String, to : String ) : Process ⇒ Process = {
-		val label = key+":{ "+from+ "-->"+ to +" }"
-		
-		val fromPred = (e:Event)=>e.values.get(key).map(_.contains(from)) getOrElse(false)
-		val toPred = (e:Event)=>e.values.get(key).map(_.contains(to)) getOrElse(false)
+		val label = key+":{ "+from+"-->"+to+" }"
+
+		val fromPred = ( e : Event ) ⇒ e.values.get( key ).map( _.contains( from ) ) getOrElse ( false )
+		val toPred = ( e : Event ) ⇒ e.values.get( key ).map( _.contains( to ) ) getOrElse ( false )
 		ExtractLongestTime( label, fromPred, toPred )
 	}
 
@@ -66,19 +66,19 @@ object FlattenProcess extends ( Process ⇒ Process ) {
 case class ExtractLongestTime( label : String, fromPred : Event ⇒ Boolean, toPred : Event ⇒ Boolean ) extends ( Process ⇒ Process ) {
 
 	def apply( in : Process ) = {
-		val res : TimeSearchResult = in.eventChain.events.foldLeft[TimeSearchResult]( NotFound() ) { ( result, event ) ⇒
+		val res : TimeSearchResult = in.eventChain.events.foldLeft[TimeSearchResult]( ResultNotFound() ) { ( result, event ) ⇒
 			val matchesFrom = fromPred( event )
 			val matchesTo = toPred( event )
 			( result, matchesFrom, matchesTo ) match {
-				case ( NotFound(), true, _ ) ⇒ Begin( event.eventTime )
-				case ( Begin( startTime ), _, true ) ⇒ End( startTime, event.eventTime )
-				case ( End( startTime, _ ), _, true ) ⇒ End( startTime, event.eventTime )
+				case ( ResultNotFound(), true, _ ) ⇒ TimeBegin( event.eventTime )
+				case ( TimeBegin( startTime ), _, true ) ⇒ TimeEnd( startTime, event.eventTime )
+				case ( TimeEnd( startTime, _ ), _, true ) ⇒ TimeEnd( startTime, event.eventTime )
 				case ( e, _, _ ) ⇒ e
 			}
 
 		}
 		res match {
-			case e @ End( _, _ ) ⇒ in.withProperty( label, e.text ).withProperty(label+"(r)",ISOPeriodFormat.standard().print(e.span.toPeriod()))
+			case e @ TimeEnd( _, _ ) ⇒ in.withProperty( label, e.text ).withProperty( label+"(r)", ISOPeriodFormat.standard().print( e.span.toPeriod() ) )
 			case _ ⇒ in
 		}
 	}
@@ -89,13 +89,13 @@ trait TimeSearchResult {
 
 }
 
-case class NotFound() extends TimeSearchResult {
+case class ResultNotFound() extends TimeSearchResult {
 }
 
-case class Begin( time : DateTime ) extends TimeSearchResult {
+case class TimeBegin( time : DateTime ) extends TimeSearchResult {
 }
 
-case class End( beginTime : DateTime, endTime : DateTime ) extends TimeSearchResult {
+case class TimeEnd( beginTime : DateTime, endTime : DateTime ) extends TimeSearchResult {
 
 	def text = span.getEndMillis().toString
 

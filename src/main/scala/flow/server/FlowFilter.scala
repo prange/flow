@@ -17,8 +17,12 @@ class FlowFilter extends unfiltered.filter.Plan {
 			capture( p.reader ).unsafePerformIO.fold( f ⇒ Ok ~> ResponseString( f ), s ⇒ Ok ~> ResponseString( s ) )
 		}
 
-		case GET( Path( Seg( "report" :: "time" :: key :: Nil ) ) ) ⇒ {
-			Ok
+		case GET( Path( "report/time" ) ) ⇒ {
+			NotFound
+		}
+
+		case GET( Path( Seg( "answer" :: Nil ) ) ) ⇒ {
+			NotFound
 		}
 	}
 
@@ -31,7 +35,7 @@ class FlowFilter extends unfiltered.filter.Plan {
 		val build = for {
 			val1 ← data.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO;
 			val2 ← data.handle( BuildProcess( c ⇒ true, List(), p ⇒ p ) ).unsafePerformIO
-		} yield ("ok")
+		} yield ( "ok" )
 		val io3 = data.queryProcess( PredicateProcessQuery( e ⇒ true ) ).unsafePerformIO
 		io3.success[String]
 	}
