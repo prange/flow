@@ -38,6 +38,8 @@ parallelExecution in Test := false
 // Only needed to track snapshot releases, SBT automatically includes the releases repository.
 resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 
+resolvers += "Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories"
+
 resolvers += "Sonatype Nexus Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 resolvers += "Maven" at "http://repo1.maven.org/maven2/"
