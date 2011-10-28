@@ -42,7 +42,7 @@ class RunningEventLog(val list : ArrayBuffer[Event] ) extends EventLog {
 	}
 
 	def record( event : Seq[Event]) = io {
-		list ++ event
+		list ++= event
 		"ok".success[String]
 	}
 	
