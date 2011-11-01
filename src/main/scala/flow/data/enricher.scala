@@ -47,10 +47,20 @@ case class WeekdayEnricher() extends Enricher {
 	val id = "weekday"
 
 	def apply( event : Event ) : Event = {
-			val time = event.eventTime
-			event.withProperty("dayOfWeek",time.getDayOfWeek().toString)
+		val time = event.eventTime
+		event.withProperty( "dayOfWeek", time.getDayOfWeek().toString )
 	}
 
+}
+
+case class CombinationEnricher( label : String, key1 : String, key2 : String ) extends Enricher {
+	val id = "combine:"+key1+"+"+key2
+
+	def apply( event : Event ) : Event = {
+		val val1 = event.values.getOrElse( key1, "<unknown>" )
+		val val2 = event.values.getOrElse( key2, "<unknown>" )
+		event.withProperty( label, val1+":"+val2 )
+	}
 }
 
 
