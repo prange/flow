@@ -87,7 +87,7 @@ class FlowSpec extends Specification {
 			flow.handle( AddEnrichment( CombinationEnricher( "activity", "bizLocation", "bizStep" ) ) )
 			flow.handle( EventObservation( observations ) ).unsafePerformIO
 
-			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
+			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values.getOrElse( "epc", "<unknown>" ) ) ).unsafePerformIO
 
 			flow.handle( BuildProcess( c ⇒ true, List(), p ⇒ p ) ).unsafePerformIO
 
