@@ -9,7 +9,7 @@ import scala.io.Source
 
 class FlowSpec extends Specification {
 
-		val filename = "xservice 01.11.2011.xml"
+	val filename = "xservice 01.11.2011.xml"
 
 	"Parsing the gsport_epcis_events file" should {
 		"Result in events" in {
@@ -40,7 +40,7 @@ class FlowSpec extends Specification {
 			val flow = new Data()
 			flow.handle( EventObservation( observations ) ).unsafePerformIO
 
-			flow.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
+			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values.getOrElse( "epc", "<unknown>" ) ) ).unsafePerformIO
 
 			flow.chains.chains.size must be > 0
 
@@ -52,7 +52,7 @@ class FlowSpec extends Specification {
 			val flow = new Data()
 			flow.handle( EventObservation( observations ) ).unsafePerformIO
 
-			flow.handle( BuildChain( e ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
+			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values.getOrElse( "epc", "<unknown>" ) ) ).unsafePerformIO
 
 			flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ), p ⇒ p ) ).unsafePerformIO
 
@@ -69,7 +69,7 @@ class FlowSpec extends Specification {
 
 			flow.handle( EventObservation( observations ) ).unsafePerformIO
 
-			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
+			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values.getOrElse( "epc", {println("Unknown epc: "+e);"<unknown>"} ) ) ).unsafePerformIO
 
 			flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ), p ⇒ p ) ).unsafePerformIO
 
