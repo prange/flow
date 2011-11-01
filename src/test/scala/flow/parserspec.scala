@@ -94,8 +94,8 @@ class FlowSpec extends Specification {
 			val result = flow.queryProcess( PredicateProcessQuery( e ⇒ true ) ).unsafePerformIO
 
 			val enriched = result.map( Process.flatter ).map( Process.elapsedTime( "disposition", "received_store", "inactive" ) )
-			println( enriched.head )
-			enriched.size should be > 0
+
+			enriched.size should be > 46
 		}
 	}
 

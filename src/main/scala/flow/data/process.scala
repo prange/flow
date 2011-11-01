@@ -83,22 +83,21 @@ case class ExtractLongestTime( label : String, fromPred : Event ⇒ Boolean, toP
 		}
 	}
 
+	case class ResultNotFound() extends TimeSearchResult {
+	}
+
+	case class TimeBegin( time : DateTime ) extends TimeSearchResult {
+	}
+
+	case class TimeEnd( beginTime : DateTime, endTime : DateTime ) extends TimeSearchResult {
+
+		def text = span.getEndMillis().toString
+
+		def span = new Interval( beginTime, endTime )
+
+	}
 }
 
 trait TimeSearchResult {
-
-}
-
-case class ResultNotFound() extends TimeSearchResult {
-}
-
-case class TimeBegin( time : DateTime ) extends TimeSearchResult {
-}
-
-case class TimeEnd( beginTime : DateTime, endTime : DateTime ) extends TimeSearchResult {
-
-	def text = span.getEndMillis().toString
-
-	def span = new Interval( beginTime, endTime )
 
 }
