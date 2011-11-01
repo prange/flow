@@ -1,11 +1,11 @@
 package flow.data
 
 import org.specs2.mutable.Specification
-
 import flow.data._
 import scalaz._
 import Scalaz._
 import Cut._
+import scala.io.Source
 
 class FlowSpec extends Specification {
 
@@ -100,11 +100,9 @@ class FlowSpec extends Specification {
 	}
 
 	def parseObservations() = {
-		val events = Parser.parseFile( filename )
+		val events = Parser.parse(_.fromSource( Source.fromFile( filename ) ) )
 
-		val observations = events.map( Parser.createEventList ).flatten
-
-		observations
+		events
 	}
 
 }

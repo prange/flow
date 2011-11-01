@@ -1,6 +1,5 @@
 package flow.server
 import com.codecommit.antixml.StAXParser
-
 import flow.data._
 import flow.report.ProcessMap
 import flow.report.TransitionCount
@@ -8,6 +7,7 @@ import flow._
 import scalaz.Scalaz._
 import scalaz.effects._
 import scalaz._
+import scala.io.Source
 
 class FlowServer {
 
@@ -27,7 +27,7 @@ class FlowServer {
 
 	
 	def capture( body : java.io.Reader ) : IO[Validation[String, String]] = {
-		val events = Parser.parseReader( body )
+		val events = Parser.parse( _.fromReader(body) )
 		data.handle( EventObservation( events ) )
 	}
 
@@ -36,16 +36,15 @@ class FlowServer {
 class TestFlowServer extends FlowServer{
 	val filename = "gsport_epcis_events2.xml"
 	override val data = loadData()
+	
 	def loadData() = {
-		val events = Parser.parseFile( filename )
-
-		val observations = events.map( Parser.createEventList ).flatten
+		val events = Parser.parse(_.fromSource( Source.fromFile( filename ) ) )
 
 		val flow = new Data()
 
 		flow.handle( AddEnrichment( WeekdayEnricher() ) ).unsafePerformIO
 
-		flow.handle( EventObservation( observations ) ).unsafePerformIO
+		flow.handle( EventObservation( events ) ).unsafePerformIO
 
 		flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 

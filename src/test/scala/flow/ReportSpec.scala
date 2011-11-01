@@ -4,6 +4,7 @@ import flow._
 import data._
 import report._
 import Cut._
+import scala.io.Source
 
 object ReportSpec extends Specification {
 
@@ -39,15 +40,13 @@ object ReportSpec extends Specification {
 	}
 
 	def loadData() = {
-		val events = Parser.parseFile( filename )
-
-		val observations = events.map( Parser.createEventList ).flatten
+		val events = Parser.parse(_.fromSource( Source.fromFile( filename ) ) )
 
 		val flow = new Data()
 
 		flow.handle( AddEnrichment( WeekdayEnricher() ) ).unsafePerformIO
 
-		flow.handle( EventObservation( observations ) ).unsafePerformIO
+		flow.handle( EventObservation( events ) ).unsafePerformIO
 
 		flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
 

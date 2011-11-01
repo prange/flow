@@ -9,7 +9,11 @@ import org.joda.time.Duration
 
 object timereport {
 
-	def durationToHours : List[Duration] ⇒ List[Hours] = _.map( ( d : Duration ) ⇒ Hours.standardHoursIn( d.toPeriod() ) )
+	def pred(key:String):String=>Event=>Boolean = s=>e=>{if(e.values.getOrElse(key,"<unknown>") contains s) true else false}
+	
+	def countT[T]: List[T] => Map[T,Int] = hs => hs.groupBy(identity).mapValues(_.size)
+	
+	val durationToHours : List[Duration] ⇒ List[Hours] = _.map( ( d : Duration ) ⇒ Hours.standardHoursIn( d.toPeriod() ) )
 
 	def procToDuration( fromPred : Event ⇒ Boolean, toPred : Event ⇒ Boolean ) = ( processes : Iterable[Process] ) ⇒ processes.foldLeft( List.empty[Duration] ) { ( xs, p ) ⇒
 
