@@ -9,7 +9,7 @@ import scala.io.Source
 
 class FlowSpec extends Specification {
 
-	val filename = "gsport_epcis_events2.xml"
+		val filename = "xservice 01.11.2011.xml"
 
 	"Parsing the gsport_epcis_events file" should {
 		"Result in events" in {
@@ -84,7 +84,7 @@ class FlowSpec extends Specification {
 			val flow = new Data()
 
 			flow.handle( AddEnrichment( WeekdayEnricher() ) ).unsafePerformIO
-
+			flow.handle( AddEnrichment( CombinationEnricher( "activity", "bizLocation", "bizStep" ) ) )
 			flow.handle( EventObservation( observations ) ).unsafePerformIO
 
 			flow.handle( BuildChain( ( e : Event ) ⇒ true, e ⇒ e.values( "epc" ) ) ).unsafePerformIO
@@ -100,7 +100,7 @@ class FlowSpec extends Specification {
 	}
 
 	def parseObservations() = {
-		val events = Parser.parse(_.fromSource( Source.fromFile( filename ) ) )
+		val events = Parser.parse( _.fromSource( Source.fromFile( filename ) ) )
 
 		events
 	}
