@@ -6,7 +6,7 @@ import scalaz._
 import Scalaz._
 import Cut._
 import flow.analyzer.FrequentPatternAnalyzer
-
+import scala.io.Source
 class AnalyzerSpec extends Specification {
 
   import flow.analyzer.ProcessPredicate._
@@ -17,7 +17,7 @@ class AnalyzerSpec extends Specification {
 
     "predicate should filter" in {
       val a = buildProcess
-      val b = a.filter(valueLessThanPred("disposition:{ received_store-->inactive }", Time.hours(2)))
+      val b = a.filter(valueLessThanPred("disposition:{ received_store-->inactive }", Time.hours(20)))
       println(b.size)
 
       success
@@ -40,7 +40,7 @@ class AnalyzerSpec extends Specification {
     val flow = new Data()
     flow.handle(EventObservation(observations)).unsafePerformIO
 
-    flow.handle(BuildChain(e ⇒ true, e ⇒ e.values("epc"))).unsafePerformIO
+    flow.handle(BuildChain(e ⇒ true, e ⇒ e.values.getOrElse("epc","<unknown>"))).unsafePerformIO
 
     flow.handle(BuildProcess(c ⇒ true, List(cutAfter(pred("disposition", "finished"))), p ⇒ p)).unsafePerformIO
 
@@ -52,11 +52,7 @@ class AnalyzerSpec extends Specification {
   }
 
   def parseObservations() = {
-    val events = Parser.parseFile(filename)
-
-    val observations = events.map(Parser.createEventList).flatten
-
-    observations
+    Parser.parse(_.fromSource(Source.fromFile(filename)))
   }
 
 }

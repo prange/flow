@@ -1,15 +1,23 @@
 package flow.analyzer
 import scala.collection.JavaConversions._
 import flow.data._
+import weka.attributeSelection.CfsSubsetEval
+import weka.attributeSelection.GreedyStepwise
 import weka.classifiers.bayes.AODE
+import weka.classifiers.meta.AttributeSelectedClassifier
+import weka.classifiers.trees.J48
+import weka.classifiers.Classifier
+import weka.classifiers.Evaluation
 import weka.core.Attribute
 import weka.core.FastVector
 import weka.core.Instance
 import weka.core.Instances
 import weka.filters.unsupervised.attribute.Discretize
-import weka.filters.Filter
-import weka.classifiers.trees.J48
-import weka.classifiers.Classifier
+import java.util.Random
+import weka.core.Utils
+import weka.attributeSelection.BestFirst
+import weka.attributeSelection.InfoGainAttributeEval
+import weka.attributeSelection.Ranker
 
 object ProcessPredicate {
   def valuePred(key: String, value: String): Process ⇒ Boolean = { p ⇒
@@ -41,19 +49,29 @@ class FrequentPatternAnalyzer {
 
     var data = createInstances(processes, pred)
 
-    val filter = new Discretize()
-    filter.setInputFormat(data)
+    val discretizeFilter = new Discretize()
+    discretizeFilter.setInputFormat(data)
 
-    // apply filter
-    data = Filter.useFilter(data, filter)
-    data.setClass(data.attribute("class"))
-    println(data.toString())
+    //    println(data.toString())
 
     // setting class attribute
 
-    val classifier = getDecisionTreeClassifier()
+    val classifier = getProbabilisticClassifier()
 
     classifier.buildClassifier(data)
+
+    val attsel = new weka.attributeSelection.AttributeSelection()
+    val infoGain = new InfoGainAttributeEval();
+    val ranker = new Ranker();
+    attsel.setEvaluator(infoGain);
+    attsel.setSearch(ranker);
+    attsel.setRanking(true);
+    attsel.SelectAttributes(data)
+    println(attsel.toResultsString())
+    // obtain the attribute indices that were selected
+    val indices = attsel.selectedAttributes()
+    println(Utils.arrayToString(indices))
+    println(attsel.rankedAttributes())
 
     classifier.toString()
   }
@@ -75,7 +93,8 @@ class FrequentPatternAnalyzer {
     booleanValues.addElement("false")
 
     val atts = new FastVector()
-    atts.addElement(new Attribute("class", booleanValues));
+    val classAttribute = new Attribute("class", booleanValues)
+    atts.addElement(classAttribute);
 
     for (row ← pEnriched) {
       for (value ← row.values) {
@@ -93,15 +112,26 @@ class FrequentPatternAnalyzer {
 
     //Initializing dataset
     val data = new Instances("MyDataset", atts, 0)
+    data.setClass(classAttribute)
+
+    var i = 0
+    var count = 0
 
     for (row ← pEnriched) {
       val instance = new Instance(atts.size())
 
-      instance.setValue(data.attribute("class"), pred(row).toString())
+      count = count + 1
+      if (pred(row)) {
+        i = i + 1
+        println(pred(row).toString())
+      }
 
+      //Setting all values to false
       for (attribute ← atts.elements()) {
         instance.setValue(attribute.asInstanceOf[Attribute], "false");
       }
+
+      instance.setValue(classAttribute, pred(row).toString())
 
       for (value ← row.values) {
         val keyHead = value._1.split('.').head
@@ -115,7 +145,8 @@ class FrequentPatternAnalyzer {
       }
       data.add(instance)
     }
-
+    println("Number of instances with class=true: " + i)
+    println("Number of instances: " + count)
     data
   }
 
