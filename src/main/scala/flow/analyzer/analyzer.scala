@@ -47,7 +47,7 @@ class FrequentPatternAnalyzer {
     // apply filter
     data = Filter.useFilter(data, filter)
     data.setClass(data.attribute("class"))
-    println(data.toString())
+//    println(data.toString())
 
     // setting class attribute
 
@@ -85,7 +85,7 @@ class FrequentPatternAnalyzer {
           val attribute = new Attribute(attributeName, booleanValues);
           if (!atts.contains(attribute)) {
             atts.addElement(attribute);
-            println("Adding attribute: " + attributeName);
+//            println("Adding attribute: " + attributeName);
           }
         }
       }

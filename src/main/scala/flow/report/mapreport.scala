@@ -11,10 +11,6 @@ import scala.annotation.tailrec
 object ProcessMap {
 
 	
-	def createBizActivityMap( processes : Iterable[Process] ) : Action[List[TransitionCount]] = {
-		def getLocation : Event ⇒ String = e ⇒ e.values.getOrElse( "bizLocation", "<unknown>" )
-		createMap( processes, getLocation )
-	}
 	
 	def createBizLocationMap( processes : Iterable[Process] ) : Action[List[TransitionCount]] = {
 		def getLocation : Event ⇒ String = e ⇒ e.values.getOrElse( "bizLocation", "<unknown>" )

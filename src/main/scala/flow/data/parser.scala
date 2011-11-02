@@ -51,7 +51,7 @@ object Parser {
 			disposition ← dispositionO;
 			readPoint ← readPointO;
 			bizLocation ← bizLocationO
-		} yield ( Event( eventTime ).withProperty( "epc", epc ).withProperty( "action", action ).withProperty( "bizStep", bizStep ).withProperty( "disposition", disposition ).withProperty( "bizLocation", bizLocation ) )
+		} yield ( Event( eventTime ).withProperty("type","observation").withProperty( "epc", epc ).withProperty( "action", action ).withProperty( "bizStep", bizStep ).withProperty( "disposition", disposition ).withProperty( "bizLocation", bizLocation ) )
 
 		val updateEvent = ( event : Event ) ⇒ extentionsPairs.foldLeft( event )( ( event : Event, t : Tuple2[String, String] ) ⇒ event.withProperty( t._1, t._2 ) )
 
@@ -84,6 +84,7 @@ object Parser {
 			epc ← aggregationParentO;
 			product ← aggregationChildrenO
 		} yield ( Event( eventTime ).
+				withProperty("type","aggregation").
 			withProperty( "epc", epc ).
 			withProperty( "action", action ).
 			withProperty( "bizStep", bizStep ).

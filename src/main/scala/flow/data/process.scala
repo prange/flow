@@ -36,8 +36,7 @@ object Process {
 
 	def flatter : Process ⇒ Process = FlattenProcess
 
-	def elapsedTime( key : String, from : String, to : String ) : Process ⇒ Process = {
-		val label = key+":{ "+from+"-->"+to+" }"
+	def elapsedTime(label:String, key : String, from : String, to : String ) : Process ⇒ Process = {
 
 		val fromPred = ( e : Event ) ⇒ e.values.get( key ).map( _.contains( from ) ) getOrElse ( false )
 		val toPred = ( e : Event ) ⇒ e.values.get( key ).map( _.contains( to ) ) getOrElse ( false )
