@@ -1,13 +1,14 @@
 package flow
 
-import org.specs2.mutable.Specification
-import flow.data._
-import scalaz._
-import Scalaz._
-import Cut._
-import flow.analyzer.FrequentPatternAnalyzer
 import scala.io.Source
-import java.io.File
+
+import org.specs2.mutable.Specification
+
+import flow.analyzer.FrequentPatternAnalyzer
+import flow.data.Cut._
+import flow.data._
+import scalaz.Scalaz._
+import scalaz._
 
 class AnalyzerSpec extends Specification {
 
@@ -35,8 +36,16 @@ class AnalyzerSpec extends Specification {
 			println( "**** Antall over :"+over.size )
 			println( "**** Antall totalt :"+p.size )
 			val output = analyzer.generateFrequentPatterns( p, notPred( valueLessThan( "time", Time.days( days ) ) ) )
+			println(output)
+			
+			
+			val dataset = analyzer.createPredictionModelInstances(p, "time" )
+			val predictionModel = analyzer.createPredictionModel(dataset)
 
-			println( output )
+			val indexOfPredictionInstance = 15;
+			println("PREDICTING DURATION: "+predictionModel.classifyInstance(dataset.instance(indexOfPredictionInstance)))
+			
+			
 
 			success
 		}
