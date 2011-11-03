@@ -12,28 +12,27 @@ object Timereport {
 
 	def pred( key : String ) : String ⇒ Event ⇒ Boolean = s ⇒ e ⇒ { if ( e.values.getOrElse( key, "<unknown>" ) contains s ) true else false }
 
-	def toPareto(list:List[HistogramEntry]) = list.foldLeft(List[(HistogramEntry,CumulativeEntry)]((HistogramEntry(0,""),CumulativeEntry(0,"")))){(list,entry)=>
-		(entry,CumulativeEntry(list.head._2.total+entry.value,entry.label))::list
-	}.reverse
-	
+	def toPareto( list : List[HistogramEntry] ) = list.foldLeft( List( ( HistogramEntry( 0, "" ), CumulativeEntry( 0, "" ) ) ) ) { ( list, entry ) ⇒
+		( entry, CumulativeEntry( list.head._2.total + entry.value, entry.label ) ) :: list
+	}.tail.reverse
+
 	def daysHistogram( fromPred : Event ⇒ Boolean, toPred : Event ⇒ Boolean, processes : Iterable[Process] ) = {
 
-		val f =procToDuration(fromPred,toPred) andThen durationToDays
-		val hours = f(processes)
-		val b = bounds(hours.map(_.getDays()))
-		val c = count(hours.map(_.getDays()))
-		
-		(b.min to b.max).map(value => HistogramEntry(c.getOrElse(value,0),value.toString)).toList
+		val f = procToDuration( fromPred, toPred ) andThen durationToDays
+		val hours = f( processes )
+		val b = bounds( hours.map( _.getDays() ) )
+		val c = count( hours.map( _.getDays() ) )
+
+		( b.min to b.max ).map( value ⇒ HistogramEntry( c.getOrElse( value, 0 ), value.toString ) ).toList
 	}
-	
-	
+
 	def count : List[Int] ⇒ Map[Int, Int] = hs ⇒ hs.groupBy( identity ).mapValues( _.size )
 
 	def bounds( values : List[Int] ) : Bounds = values.foldLeft( Bounds( 0, 0 ) ) { ( b, value ) ⇒
 		b.update( value )
 	}
 
-	val durationToDays : List[Duration] ⇒ List[Days] = _.map( ( d : Duration ) ⇒ Days.standardDaysIn(d.toPeriod() ) )
+	val durationToDays : List[Duration] ⇒ List[Days] = _.map( ( d : Duration ) ⇒ Days.standardDaysIn( d.toPeriod() ) )
 
 	def procToDuration( fromPred : Event ⇒ Boolean, toPred : Event ⇒ Boolean ) = ( processes : Iterable[Process] ) ⇒ processes.foldLeft( List.empty[Duration] ) { ( xs, p ) ⇒
 
@@ -83,5 +82,5 @@ case class Bounds( min : Int, max : Int ) {
 	}
 }
 
-case class HistogramEntry( value:Int, label:String )
-case class CumulativeEntry( total:Int, label:String )
+case class HistogramEntry( value : Int, label : String )
+case class CumulativeEntry( total : Int, label : String )

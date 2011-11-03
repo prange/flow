@@ -17,10 +17,10 @@ class AnalyzerSpec extends Specification {
 
 	"Parsing the gsport_epcis_events file" should {
 
-		"predicate should filter" in {
-			val a = buildProcess
-			val b = a.filter( valueLessThanPred( "disposition:{ received_store-->inactive }", Time.hours( 2 ) ) )
-			println( b.size )
+    "predicate should filter" in {
+      val a = buildProcess
+      val b = a.filter(valueLessThanPred("disposition:{ received_store-->inactive }", Time.hours(20)))
+      println(b.size)
 
 			success
 		}
@@ -41,8 +41,7 @@ class AnalyzerSpec extends Specification {
 		val observations = parseObservations()
 		val flow = new Data()
 		flow.handle( EventObservation( observations ) ).unsafePerformIO
-
-		flow.handle( BuildChain( e ⇒ true, e ⇒ e.values.getOrElse( "epc","<unknown>" ) ) ).unsafePerformIO
+    flow.handle(BuildChain(e ⇒ true, e ⇒ e.values.getOrElse("epc","<unknown>"))).unsafePerformIO
 
 		flow.handle( BuildProcess( c ⇒ true, List( cutAfter( pred( "disposition", "finished" ) ) ), p ⇒ p ) ).unsafePerformIO
 
@@ -53,8 +52,8 @@ class AnalyzerSpec extends Specification {
 		enriched
 	}
 
-	def parseObservations() = {
-		Parser.parse( _.fromSource( Source.fromFile(new File( filename ) ) ) )
-	}
+  def parseObservations() = {
+    Parser.parse(_.fromSource(Source.fromFile(filename)))
+  }
 
 }
