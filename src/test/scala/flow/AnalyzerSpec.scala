@@ -42,8 +42,10 @@ class AnalyzerSpec extends Specification {
 			val dataset = analyzer.createPredictionModelInstances(p, "time" )
 			val predictionModel = analyzer.createPredictionModel(dataset)
 
-			val indexOfPredictionInstance = 15;
-			println("PREDICTING DURATION: "+predictionModel.classifyInstance(dataset.instance(indexOfPredictionInstance)))
+			val indexOfPredictionInstance = 15
+			val instance = dataset.instance(indexOfPredictionInstance)
+			println("Predicting instance: "+instance)
+			println("PREDICTING DURATION: "+predictionModel.classifyInstance(instance))
 			
 			
 
