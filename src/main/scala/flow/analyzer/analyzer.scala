@@ -52,15 +52,6 @@ class FrequentPatternAnalyzer {
     val discretizeFilter = new Discretize()
     discretizeFilter.setInputFormat(data)
 
-<<<<<<< HEAD
-    // apply filter
-    data = Filter.useFilter(data, filter)
-    data.setClass(data.attribute("class"))
-//    println(data.toString())
-=======
-    //    println(data.toString())
->>>>>>> b9bfceea3e5dea86cbe2cc425f780faaa7d1cff1
-
     // setting class attribute
 
     val classifier = getProbabilisticClassifier()
