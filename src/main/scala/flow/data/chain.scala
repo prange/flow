@@ -1,8 +1,8 @@
 package flow.data
-import flow.data._
 import scala.collection._
+import flow.data._
 import scalaz.effects._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.immutable.TreeSet
 
 
 class EventChains(  ) {
@@ -23,11 +23,11 @@ class EventChains(  ) {
 	def query( pred : EventChain ⇒ Boolean ) = io { chains.values.filter( pred ) }
 }
 
-case class EventChain( id : String, list : List[Event] ) {
+case class EventChain( id : String, list : List[Event] ){
 
-	def append( e : Event ) = EventChain( id, e :: list )
+	def append( e : Event ) = EventChain( id,  e::list )
 
-	def events = list.reverse
+	def events = list.sorted
 	
 	override def toString() = events.mkString("EventChain("+id+")[\n",",\n","]")
 

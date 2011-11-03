@@ -23,10 +23,13 @@ object ProcessPredicate {
   def valuePred(key: String, value: String): Process ⇒ Boolean = { p ⇒
     p.values.get(key).map(_.contains(value)) getOrElse false
   }
-  def valueLessThanPred(key: String, value: Long): Process ⇒ Boolean = { p ⇒
-    p.values.get(key).map(_.toLong > value) getOrElse false
+  
+  def valueLessThan(key: String, value: Long): Process ⇒ Boolean = { p ⇒
+    p.values.get(key).map(_.toLong < value) getOrElse false
   }
 
+  def notPred(pred:Process=>Boolean) : Process => Boolean = p => !pred(p)
+  
   def acceptedValuePred(acceptedKeys: Set[String]): String ⇒ Boolean = { key ⇒
 
     if (acceptedKeys.contains(key))
@@ -40,7 +43,7 @@ object ProcessPredicate {
 class FrequentPatternAnalyzer {
 
   def acceptedKeys: Set[String] = {
-    Set("customerBrand", "chain", "activity", "product", "bizLocation", "disposition", "action")
+    Set("customerBrand", "chain", "activity", "product", "customerModel","priority")
   }
 
   def generateFrequentPatterns(processes: Iterable[Process], pred: Process ⇒ Boolean): String = {
@@ -54,7 +57,7 @@ class FrequentPatternAnalyzer {
 
     // setting class attribute
 
-    val classifier = getProbabilisticClassifier()
+    val classifier = getDecisionTreeClassifier()
 
     classifier.buildClassifier(data)
 
@@ -65,11 +68,8 @@ class FrequentPatternAnalyzer {
     attsel.setSearch(ranker);
     attsel.setRanking(true);
     attsel.SelectAttributes(data)
-    println(attsel.toResultsString())
     // obtain the attribute indices that were selected
     val indices = attsel.selectedAttributes()
-    println(Utils.arrayToString(indices))
-    println(attsel.rankedAttributes())
 
     classifier.toString()
   }
@@ -102,7 +102,6 @@ class FrequentPatternAnalyzer {
           val attribute = new Attribute(attributeName, booleanValues);
           if (!atts.contains(attribute)) {
             atts.addElement(attribute);
-//            println("Adding attribute: " + attributeName);
           }
         }
       }
@@ -121,7 +120,6 @@ class FrequentPatternAnalyzer {
       count = count + 1
       if (pred(row)) {
         i = i + 1
-        println(pred(row).toString())
       }
 
       //Setting all values to false
@@ -143,8 +141,6 @@ class FrequentPatternAnalyzer {
       }
       data.add(instance)
     }
-    println("Number of instances with class=true: " + i)
-    println("Number of instances: " + count)
     data
   }
 

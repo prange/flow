@@ -87,7 +87,6 @@ class FlowSpec extends Specification {
 
 			val histogram = daysHistogram( fromPred, toPred, result )
 			val pareto = toPareto(histogram)
-			println(pareto )
 
 			success
 		}

@@ -42,7 +42,7 @@ object Process {
 		val toPred = ( e : Event ) ⇒ e.values.get( key ).map( _.contains( to ) ) getOrElse ( false )
 		ExtractLongestTime( label, fromPred, toPred )
 	}
-
+	
 }
 
 object FlattenProcess extends ( Process ⇒ Process ) {
@@ -90,7 +90,7 @@ case class ExtractLongestTime( label : String, fromPred : Event ⇒ Boolean, toP
 
 	case class TimeEnd( beginTime : DateTime, endTime : DateTime ) extends TimeSearchResult {
 
-		def text = span.getEndMillis().toString
+		def text = (span.getEndMillis()-span.getStartMillis()).toString
 
 		def span = new Interval( beginTime, endTime )
 
