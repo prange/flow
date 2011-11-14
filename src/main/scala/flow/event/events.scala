@@ -2,13 +2,15 @@ package flow.event
 import flow._
 import org.joda.time.DateTime
 import com.codecommit.antixml._
+import scalaz._
+import Scalaz._
 
 case class XmlEvent( eventTime : DateTime, eventType : String, data : Group[Elem] ) {
 	def select( property : Selector[Elem] ) = data \ property \ text headOption
 }
 
-case class EventChain( events : List[XmlEvent], data : Group[Elem] ) {
-	def ::( event : XmlEvent ) = EventChain( event :: events, data )
+case class EventChain( events : NonEmptyList[XmlEvent], data : Group[Elem] ) {
+	def ::( event : XmlEvent ) = EventChain( event <:: events, data )
 	def select( property : Selector[Elem] ) = data \ property \ text headOption
 }
 
@@ -27,7 +29,7 @@ case class MonthTimer(time:DateTime) extends TimerEvent
 
 object EventChain {
 
-	def from( event : XmlEvent ) = EventChain( event :: Nil, Group() )
+	def from( event : XmlEvent ) = EventChain( event.wrapNel, Group() )
 }
 
 
