@@ -23,11 +23,11 @@ case class Wire( from : OutputPortId, to : InputPortId )
 
 case class PortBinding( port : InputPortId, operator : OperatorId )
 
-case class OperatorOutput[M]( from : String, message : M ) {
+case class OperatorOutput[+M]( from : String, message : M ) {
 	def toInput( to : String ) = OperatorInput( to, message )
 }
 
-case class OperatorInput[M]( to : String, message : M )
+case class OperatorInput[+M]( to : String, message : M )
 
 trait OperatorState[I, O] extends ( I ⇒ ( O, OperatorState[I, O] ) )
 

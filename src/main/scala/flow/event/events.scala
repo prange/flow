@@ -18,7 +18,7 @@ case class EventChain( id : String, events : NonEmptyList[XmlEvent], data : Grou
 
 object EventChain {
 
-	def from( idExtractor : XmlEvent ⇒ String, event : XmlEvent ) = EventChain( idExtractor( event ), event.wrapNel, Group() )
+	def from( id: String, event : XmlEvent ) = EventChain( id, event.wrapNel, Group() )
 }
 
 trait TimerEvent {
