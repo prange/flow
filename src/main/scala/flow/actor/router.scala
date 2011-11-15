@@ -48,8 +48,7 @@ class Router( routes : List[Wire], bindings : Map[InputPortId, ActorRef] ) exten
 	def receive = {
 		case o @ OperatorOutput( from, event ) ⇒ {
 			val actors = routes.filter( w ⇒ w.from.id === from ).map( w ⇒ (w.to.id,bindings( w.to ) ) )
-			if ( actors.size > 0 ) actors.foreach( t=> t._2 ! o.toInput(t._1) )
-			else EventHandler.warning( this, "Route for %s not found".format( from ) )
+			actors.foreach( t=> t._2 ! o.toInput(t._1) )
 		}
 		case i @ OperatorInput( to, event ) ⇒ {
 			bindings.get( InputPortId( to ) ).map( _ ! i ) getOrElse EventHandler.warning( this, "Target port %s not found".format( to ) )

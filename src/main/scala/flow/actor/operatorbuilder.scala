@@ -16,7 +16,7 @@ object OperatorBuilder {
 
 	def filter( name : String, predicate : XmlEvent ⇒ Boolean ) : FilterBuilder = new FilterBuilder( name, predicate )
 
-	def sink( name : String, f : XmlEvent ⇒ Unit ) : SinkBuilder = new SinkBuilder( name, f )
+	def sink( name : String, f : Any ⇒ Unit ) : SinkBuilder = new SinkBuilder( name, f )
 }
 
 trait ConnectorBuilder {
@@ -84,10 +84,10 @@ class FilterBuilder( id : String, pred : XmlEvent ⇒ Boolean ) extends Operator
 	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operator
 }
 
-class SinkBuilder( id : String, f : XmlEvent ⇒ Unit ) extends OperatorBuilder {
+class SinkBuilder( id : String, f : Any ⇒ Unit ) extends OperatorBuilder {
 		lazy val operator = {
-		val inputRouter : PartialFunction[Any, XmlEvent] = {
-			case OperatorInput( _, e : XmlEvent ) ⇒ e
+		val inputRouter : PartialFunction[Any, Any] = {
+			case OperatorInput( _, e : Any ) ⇒ e
 		}
 
 		val outputRouter : Unit ⇒ List[OperatorOutput[Unit]] = e ⇒ List()

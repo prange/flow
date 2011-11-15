@@ -7,13 +7,17 @@ import Scalaz._
 import org.joda.time.Interval
 
 case class XmlEvent( eventTime : DateTime, eventType : String, data : Group[Elem] ) {
-	def select( property : Selector[Elem] ) = data \ property \ text headOption
+	def select( select :Group[Elem] =>  Group[Elem] ) = select(data) \ text headOption
+	
+	override def toString = "XmlEvent time:%s, type:%s" format( eventTime, eventType)
 }
 
 case class EventChain( id : String, events : NonEmptyList[XmlEvent], data : Group[Elem] ) {
 	def ::( event : XmlEvent ) = EventChain( id, event <:: events, data )
 	def select( property : Selector[Elem] ) = data \ property \ text headOption
 	def interval = if ( events.tail.size == 0 ) new Interval( events.head.eventTime.getMillis(), events.head.eventTime.getMillis() + 1 ) else ( events.head.eventTime, events.tail.last.eventTime )
+	
+	override def toString = "EventChain id: %s" format( id)
 }
 
 object EventChain {

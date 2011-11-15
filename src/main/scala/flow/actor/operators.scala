@@ -66,7 +66,7 @@ case class TransformerState( f : XmlEvent ⇒ XmlEvent ) extends OperatorState[X
 }
 
 
-case class SinkState( f : XmlEvent ⇒ Unit ) extends OperatorState[XmlEvent, Unit] {
-	def apply( e : XmlEvent ) = ( f( e ), this )
+case class SinkState( f : Any ⇒ Unit ) extends OperatorState[Any, Unit] {
+	def apply( e : Any ) = ( f( e ), this )
 }
 

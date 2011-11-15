@@ -14,7 +14,7 @@ object Filter {
 
 case class PropertyExistsTest( property : Selector[Elem] ) extends Predicate[XmlEvent] {
 	def apply( event : XmlEvent ) = {
-		val extract = event select property
+		val extract = event select ( _ \ property )
 		val e2 = extract some { _ ⇒ true } none { false }
 		e2
 	}
@@ -23,7 +23,7 @@ case class PropertyExistsTest( property : Selector[Elem] ) extends Predicate[Xml
 class OperatorTest[T]( property : Selector[Elem], toT : String ⇒ T, operator : ( T, T ) ⇒ Boolean, value : T ) extends Predicate[XmlEvent]{
 
 	def apply( event : XmlEvent ) = {
-		val extract = event select property
+		val extract = event select ( _ \ property)
 		extract map ( toT( _ ) ) map ( operator( _, value ) ) getOrElse false
 
 	}
