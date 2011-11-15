@@ -21,6 +21,7 @@ object OperatorBuilder {
 
 trait ConnectorBuilder {
 	def update( context : Context ) : Context
+	def &(other:ConnectorBuilder) = new ComposedConnectorBuilder(this,other)
 }
 
 class LeafConnectorBuilder( input : InputBuilder, output : OutputBuilder ) extends ConnectorBuilder {

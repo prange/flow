@@ -21,7 +21,9 @@ libraryDependencies ++= Seq(
 	"org.scalaz" %% "scalaz-core" % "6.0.2",
 	"org.specs2" %% "specs2" % "1.6.1",
 	"weka" % "weka" % "3.6.3",
-	"se.scalablesolutions.akka" % "akka-actor" % "1.2"
+	"se.scalablesolutions.akka" % "akka-actor" % "1.2",
+	"se.scalablesolutions.akka" % "akka-amqp" % "1.2"
+</dependency>
 )
   
   
