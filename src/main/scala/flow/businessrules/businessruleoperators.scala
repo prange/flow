@@ -22,11 +22,11 @@ import flow.actor.OutputPortId
 import flow.event.ProcessAdvancedEvent
 import flow.actor.OperatorId
 
-//object BusinessRuleViolationsBuilder {
-//
-//  def histogram(id: String, windowLength: Duration) = new BusinessRuleViolationsBuilder(id, windowLength)
-//
-//}
+object BusinessRuleViolationsBuilder {
+
+  def validator(id: String) = new BusinessRuleViolationsBuilder(id)
+
+}
 
 case class BusinessRule(id: String, description: String, pred: ProcessAdvancedEvent ⇒ Boolean)
 

@@ -6,43 +6,46 @@ import scalaz._
 import Scalaz._
 import org.joda.time.Interval
 import flow.statistics.Bucket
-import flow.businessrules.BusinessRule
+import businessrules._
 
-case class XmlEvent( eventTime : DateTime, eventType : String, data : Group[Elem] ) {
-	def select( select :Group[Elem] =>  Group[Elem] ) = select(data) \ text headOption
-	
-	override def toString = "XmlEvent time:%s, type:%s" format( eventTime, eventType)
+case class XmlEvent(eventTime: DateTime, eventType: String, data: Group[Elem]) {
+  def select(select: Group[Elem] ⇒ Group[Elem]) = select(data) \ text headOption
+
+  override def toString = "XmlEvent time:%s, type:%s" format (eventTime, eventType)
 }
 
-case class EventChain( id : String, events : NonEmptyList[XmlEvent], data : Group[Elem] ) {
-	def ::( event : XmlEvent ) = EventChain( id, event <:: events, data )
-	def select( property : Selector[Elem] ) = data \ property \ text headOption
-	def interval = if ( events.tail.size == 0 ) new Interval( events.head.eventTime.getMillis(), events.head.eventTime.getMillis() + 1 ) else new Interval( events.head.eventTime, events.tail.last.eventTime )
-	
-	override def toString = "EventChain id: %s" format( id)
+case class EventChain(id: String, events: NonEmptyList[XmlEvent], data: Group[Elem]) {
+  def ::(event: XmlEvent) = EventChain(id, event <:: events, data)
+  def select(property: Selector[Elem]) = data \ property \ text headOption
+
+  def update(f: Group[Elem] ⇒ Group[Elem]) = new EventChain(id, events, f(data))
+
+  def interval = if (events.tail.size == 0) new Interval(events.head.eventTime.getMillis(), events.head.eventTime.getMillis() + 1) else new Interval(events.head.eventTime, events.tail.last.eventTime)
+
+  override def toString = "EventChain id: %s" format (id)
 }
 
 object EventChain {
 
-	def from( id: String, event : XmlEvent ) = EventChain( id, event.wrapNel, Group() )
+  def from(id: String, event: XmlEvent) = EventChain(id, event.wrapNel, Group())
 }
-
 
 trait TimerEvent {
-	val time : DateTime
+  val time: DateTime
 }
 
-case class SecondTimer( time : DateTime ) extends TimerEvent
-case class MinuteTimer( time : DateTime ) extends TimerEvent
-case class HourTimer( time : DateTime ) extends TimerEvent
-case class DayTimer( time : DateTime ) extends TimerEvent
+case class SecondTimer(time: DateTime) extends TimerEvent
+case class MinuteTimer(time: DateTime) extends TimerEvent
+case class HourTimer(time: DateTime) extends TimerEvent
+case class DayTimer(time: DateTime) extends TimerEvent
 
 trait ProcessEvent
-case class ProcessStartedEvent( timstamp : DateTime, eventchain : EventChain ) extends ProcessEvent
-case class ProcessAdvancedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
-case class ProcessEndedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
+case class ProcessStartedEvent(timstamp: DateTime, eventchain: EventChain) extends ProcessEvent
+case class ProcessAdvancedEvent(timestamp: DateTime, eventchain: EventChain) extends ProcessEvent
+case class ProcessEndedEvent(timestamp: DateTime, eventchain: EventChain) extends ProcessEvent
 
 case class UpdatedHistogramEvent(histogram: List[Bucket])
 case class BusinessRuleViolatedEvent(rule: BusinessRule, process: ProcessAdvancedEvent)
+case class PredictedViolationEvent(violations: List[(String, Double)], process: ProcessAdvancedEvent)
 
 

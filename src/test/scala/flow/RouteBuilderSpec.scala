@@ -7,11 +7,11 @@ import flow.data.Parser
 import scala.io.Source
 import flow.actor.Context
 import flow.actor.ReadyEngine
-import flow.operator.WeekdayEnricher
 import flow._
 import epcis._
 import operator._
 import AssembleBuilder._
+import flow.operator.WeekdayEnricher
 
 class RouteBuilderSpec extends Specification {
 
@@ -50,8 +50,11 @@ class RouteBuilderSpec extends Specification {
 				res.fold( l ⇒ l :: list, r ⇒ list )
 			}
 
+			engine.stop.unsafePerformIO
+			
 			if ( result.size == 0 ) success else { println( result ); failure }
 
+			
 		}
 
 	}
