@@ -5,6 +5,7 @@ import com.codecommit.antixml._
 import scalaz._
 import Scalaz._
 import org.joda.time.Interval
+import flow.statistics.Bucket
 
 case class XmlEvent( eventTime : DateTime, eventType : String, data : Group[Elem] ) {
 	def select( select :Group[Elem] =>  Group[Elem] ) = select(data) \ text headOption
@@ -15,7 +16,7 @@ case class XmlEvent( eventTime : DateTime, eventType : String, data : Group[Elem
 case class EventChain( id : String, events : NonEmptyList[XmlEvent], data : Group[Elem] ) {
 	def ::( event : XmlEvent ) = EventChain( id, event <:: events, data )
 	def select( property : Selector[Elem] ) = data \ property \ text headOption
-	def interval = if ( events.tail.size == 0 ) new Interval( events.head.eventTime.getMillis(), events.head.eventTime.getMillis() + 1 ) else ( events.head.eventTime, events.tail.last.eventTime )
+	def interval = if ( events.tail.size == 0 ) new Interval( events.head.eventTime.getMillis(), events.head.eventTime.getMillis() + 1 ) else new Interval( events.head.eventTime, events.tail.last.eventTime )
 	
 	override def toString = "EventChain id: %s" format( id)
 }
@@ -36,9 +37,10 @@ case class HourTimer( time : DateTime ) extends TimerEvent
 case class DayTimer( time : DateTime ) extends TimerEvent
 
 trait ProcessEvent
-case class ProcessStartedEvent( timstamp : DateTime, event : EventChain ) extends ProcessEvent
-case class ProcessAdvancedEvent( timestamp : DateTime, event : EventChain ) extends ProcessEvent
-case class ProcessEndedEvent( timestamp : DateTime, event : EventChain ) extends ProcessEvent
+case class ProcessStartedEvent( timstamp : DateTime, eventchain : EventChain ) extends ProcessEvent
+case class ProcessAdvancedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
+case class ProcessEndedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 
+case class UpdatedHistogramEvent(histogram: List[Bucket])
 
 

@@ -2,6 +2,7 @@ package flow.data
 
 import org.specs2.mutable.Specification
 import flow.data._
+import flow.statistics._
 import scalaz._
 import Scalaz._
 import scala.io.Source
