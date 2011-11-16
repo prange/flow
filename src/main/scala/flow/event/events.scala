@@ -27,6 +27,7 @@ object EventChain {
 	def from( id: String, event : XmlEvent ) = EventChain( id, event.wrapNel, Group() )
 }
 
+
 trait TimerEvent {
 	val time : DateTime
 }
@@ -35,8 +36,6 @@ case class SecondTimer( time : DateTime ) extends TimerEvent
 case class MinuteTimer( time : DateTime ) extends TimerEvent
 case class HourTimer( time : DateTime ) extends TimerEvent
 case class DayTimer( time : DateTime ) extends TimerEvent
-case class WeekTimer( time : DateTime ) extends TimerEvent
-case class MonthTimer( time : DateTime ) extends TimerEvent
 
 trait ProcessEvent
 case class ProcessStartedEvent( timstamp : DateTime, eventchain : EventChain ) extends ProcessEvent
