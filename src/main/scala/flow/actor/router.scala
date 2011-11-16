@@ -31,7 +31,7 @@ class ReadyEngine( context : Context ) {
 
 }
 
-class OperatorActor( val ident : String, o : Operator[_, _, _] ) extends Actor {
+class OperatorActor( val ident : String, o : Operator[_, _] ) extends Actor {
 	val id = ident
 	def receive = {
 		case m @ _ ⇒ o.handle( m )( self ).unsafePerformIO
@@ -74,9 +74,9 @@ object Context {
 	def apply() = new Context( Set(), Set(), Set() )
 }
 
-case class Context( operators : Set[Operator[_, _, _]], bindings : Set[PortBinding], connections : Set[Wire] ) {
+case class Context( operators : Set[Operator[_, _]], bindings : Set[PortBinding], connections : Set[Wire] ) {
 
-	def +( op : Operator[_, _, _] ) = copy( operators = operators + op )
+	def +( op : Operator[_, _] ) = copy( operators = operators + op )
 	def +( binding : PortBinding ) = copy( bindings = bindings + binding )
 	def +( bindingI : Iterable[PortBinding] ) = copy( bindings = bindings ++ bindingI )
 	def +( wire : Wire ) = copy( connections = connections + wire )
