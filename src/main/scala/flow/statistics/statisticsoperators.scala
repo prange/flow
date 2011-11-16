@@ -3,7 +3,6 @@ package flow.statistics
 import org.joda.time.DateTime
 import org.joda.time.Days
 import org.joda.time.Duration
-
 import flow.actor.OperatorOutput
 import flow.actor.Context
 import flow.actor.InputBuilder
@@ -20,6 +19,7 @@ import flow.event.ProcessEndedEvent
 import flow.event.TimerEvent
 import flow.event.UpdatedHistogramEvent
 import scalaz.Scalaz._
+import flow.event.MinuteTimer
 
 object HistogramBuilder {
 
@@ -73,7 +73,7 @@ class HistogramBuilder(id: String, windowLength: Duration) extends OperatorBuild
   lazy val operator = {
     val inputRouter: PartialFunction[Any, Either[ProcessEndedEvent, TimerEvent]] = {
       case OperatorInput(_, e: ProcessEndedEvent) ⇒ Left(e)
-      case OperatorInput(_, t: TimerEvent) ⇒ Right(t)
+      case OperatorInput(_, t: MinuteTimer) ⇒ Right(t)
     }
 
     val outputRouter: Option[UpdatedHistogramEvent] ⇒ List[OperatorOutput[UpdatedHistogramEvent]] = { o ⇒

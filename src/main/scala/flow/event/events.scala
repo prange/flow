@@ -6,6 +6,7 @@ import scalaz._
 import Scalaz._
 import org.joda.time.Interval
 import flow.statistics.Bucket
+import flow.businessrules.BusinessRule
 
 case class XmlEvent( eventTime : DateTime, eventType : String, data : Group[Elem] ) {
 	def select( select :Group[Elem] =>  Group[Elem] ) = select(data) \ text headOption
@@ -43,5 +44,6 @@ case class ProcessAdvancedEvent( timestamp : DateTime, eventchain : EventChain )
 case class ProcessEndedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 
 case class UpdatedHistogramEvent(histogram: List[Bucket])
+case class BusinessRuleViolatedEvent(rule: BusinessRule, process: ProcessAdvancedEvent)
 
 
