@@ -31,7 +31,7 @@ case class OperatorInput[+M]( to : String, message : M )
 
 trait OperatorState[I, O] extends ( I ⇒ ( O, OperatorState[I, O] ) )
 
-class Operator[I, O, M]( ident : String, inputRouter : PartialFunction[Any, I], outputRouter : O ⇒ List[OperatorOutput[M]], s : OperatorState[I, O] ) { self ⇒
+class Operator[I, O]( ident : String, inputRouter : PartialFunction[Any, I], outputRouter : O ⇒ List[OperatorOutput[_]], s : OperatorState[I, O] ) { self ⇒
 	def id = ident
 	type HandleReply = ActorRef ⇒ IO[Unit]
 	private var state : OperatorState[I, O] = s
