@@ -1,7 +1,5 @@
 package flow.businessrules
 
-import event.BusinessRuleViolatedEvent
-import event.ProcessAdvancedEvent
 import flow.actor.OperatorState
 import flow.event.BusinessRuleViolatedEvent
 import flow.event.ProcessAdvancedEvent
@@ -57,4 +55,4 @@ class BusinessRuleViolationsState(businessRules: List[BusinessRule]) extends Ope
 //  val in = InputBuilder(this, InputPortId(id + ".in"))
 //
 //  def update(context: Context) = context + PortBinding(InputPortId(id + ".in"), OperatorId(id)) + operator
-}
+//}
