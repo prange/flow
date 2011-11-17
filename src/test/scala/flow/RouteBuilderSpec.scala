@@ -1,37 +1,36 @@
 package flow
-import org.specs2.mutable.Specification
-import flow.actor.OperatorBuilder._
-import scalaz._
-import Scalaz._
-import flow.data.Parser
 import scala.io.Source
-import flow.actor.Context
-import flow.actor.ReadyEngine
+import org.specs2.mutable.Specification
+import event._
+import flow.actor.OperatorBuilder._
+import flow.data.Parser
 import flow._
-import epcis._
+import operator.AssembleBuilder._
 import operator._
-import AssembleBuilder._
-import flow.operator.WeekdayEnricher
+import scalaz.Scalaz._
+import flow.epcis.EpcisTransform
+import flow.epcis.ObservationTransform
+import flow.epcis.ProductEnricher
 
 class RouteBuilderSpec extends Specification {
 
+	import Predicates._
 	val filename = "sykkelmeldinger.xml"
 	val observations = parseObservations.reverse
 
-	val repairProcessDefinition = ProcessDefinition( "repair", whereField( "disposition" ).contains( "active" ), whereField( "disposition" ).contains( "from_workshop" ) )
-	val customerPickup = ProcessDefinition( "pickup", whereField( "disposition" ).contains( "from_workshop" ), whereField( "disposition" ).contains( "inactive" ) )
+	val repairProcessDefinition = ProcessDefinition( "repair", where field "disposition" contains "active", where field "disposition" contains "from_workshop" )
+	val customerPickup = ProcessDefinition( "pickup", where field "disposition" contains "from_workshop", where field "disposition" contains "inactive" )
 
 	"When building routes one" should {
 
 		"Create Connectors" in {
 			val builder = {
 				val s = source( "test" )
-				val weekdayEnricher = transform( "week", WeekdayEnricher() )
-				val assembler = assemble( "assembler", List( repairProcessDefinition, customerPickup ), idExtractor )
-				val print = sink( "sink", e ⇒ println(e) )
+				val epcisTransformer = transform("xserviceToObservations",EpcisTransform() andThen ObservationTransform() andThen ProductEnricher())
+				val assembler = assemble( "assembler", List( repairProcessDefinition, customerPickup ), _.get("id") )
+				val print = sink( "sink", e ⇒ println( e ) )
 
-				s.out --> weekdayEnricher.in &
-					weekdayEnricher.out --> assembler.in &
+				s.out --> assembler.in &
 					assembler.started --> print.in &
 					assembler.ended --> print.in
 
@@ -51,10 +50,9 @@ class RouteBuilderSpec extends Specification {
 			}
 
 			engine.stop.unsafePerformIO
-			
+
 			if ( result.size == 0 ) success else { println( result ); failure }
 
-			
 		}
 
 	}

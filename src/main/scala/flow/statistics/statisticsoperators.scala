@@ -76,7 +76,7 @@ class HistogramBuilder(id: String, windowLength: Duration) extends OperatorBuild
       case OperatorInput(_, t: MinuteTimer) ⇒ Right(t)
     }
 
-    val outputRouter: Option[UpdatedHistogramEvent] ⇒ List[OperatorOutput[UpdatedHistogramEvent]] = { o ⇒
+    val outputRouter: Option[UpdatedHistogramEvent] ⇒ List[OperatorOutput] = { o ⇒
       o.fold(e ⇒ List(OperatorOutput(id + ".updated", e)), List())
     }
 

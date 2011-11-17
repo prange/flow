@@ -56,7 +56,7 @@ class BusinessRuleViolationsBuilder(id: String) extends OperatorBuilder {
       case OperatorInput(_, e: ProcessAdvancedEvent) ⇒ e
     }
 
-    val outputRouter:Tuple2[List[BusinessRuleViolatedEvent], ProcessAdvancedEvent]=>List[OperatorOutput[_]] = {(t) ⇒ 
+    val outputRouter:Tuple2[List[BusinessRuleViolatedEvent], ProcessAdvancedEvent]=>List[OperatorOutput] = {(t) ⇒ 
       OperatorOutput(id+".out",t._2) :: t._1.map(v=>OperatorOutput(id+".violations",v))
     }
 
