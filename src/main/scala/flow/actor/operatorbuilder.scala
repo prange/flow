@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import akka.actor.Actor
 import scalaz._
 import Scalaz._
+import Routers._
 
 object OperatorBuilder {
 
@@ -56,28 +57,19 @@ class SourceBuilder( id : String ) extends OperatorBuilder {
 }
 
 class TransformerBuilder( id : String, f : XmlEvent ⇒ XmlEvent ) extends OperatorBuilder {
-	lazy val operator = {
-		val inputRouter : PartialFunction[Any, XmlEvent] = {
-			case OperatorInput( _, e : XmlEvent ) ⇒ e
-		}
+	
+	lazy val operator = 
+		new Operator( id, oneInputRouter, oneOutputRouter((id+".out")), new TransformerState( f ) )
 
-		val outputRouter : XmlEvent ⇒ List[OperatorOutput[XmlEvent]] = e ⇒ List( OperatorOutput( id+".out", e ) )
-		new Operator( id, inputRouter, outputRouter, new TransformerState( f ) )
-	}
 	val out = OutputBuilder( this, OutputPortId( id+".out" ) )
 	val in = InputBuilder( this, InputPortId( id+".in" ) )
 	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operator
 }
 
 class FilterBuilder( id : String, pred : XmlEvent ⇒ Boolean ) extends OperatorBuilder {
-	lazy val operator = {
-		val inputRouter : PartialFunction[Any, XmlEvent] = {
-			case OperatorInput( _, e : XmlEvent ) ⇒ e
-		}
-
-		val outputRouter : Either[XmlEvent,XmlEvent] ⇒ List[OperatorOutput[XmlEvent]] = e ⇒ e.fold(filtered=>OperatorOutput(id+".filtered",filtered),unfiltered=>OperatorOutput(id+".unfiltered",unfiltered)).pure[List]
-		new Operator( id, inputRouter, outputRouter, new FilterState( pred ) )
-	}
+	lazy val operator = 
+		new Operator( id, oneInputRouter, eitherOutputRouter( id+".filtered", id+".unfiltered"), new FilterState( pred ) )
+	
 	val filtered = OutputBuilder( this, OutputPortId( id+".filtered" ) )
 	val unfiltered = OutputBuilder( this, OutputPortId( id+".unfiltered" ) )
 	val in = InputBuilder( this, InputPortId( id+".in" ) )
@@ -90,7 +82,7 @@ class SinkBuilder( id : String, f : Any ⇒ Unit ) extends OperatorBuilder {
 			case OperatorInput( _, e : Any ) ⇒ e
 		}
 
-		val outputRouter : Unit ⇒ List[OperatorOutput[Unit]] = e ⇒ List()
+		val outputRouter : Unit ⇒ List[OperatorOutput] = e ⇒ List()
 		new Operator( id, inputRouter, outputRouter, new SinkState( f ) )
 	}
 	val out = OutputBuilder( this, OutputPortId( id+".out" ) )

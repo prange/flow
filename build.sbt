@@ -22,7 +22,10 @@ libraryDependencies ++= Seq(
 	"org.specs2" %% "specs2" % "1.6.1",
 	"weka" % "weka" % "3.6.3",
 	"se.scalablesolutions.akka" % "akka-actor" % "1.2",
-	"se.scalablesolutions.akka" % "akka-amqp" % "1.2"
+	"se.scalablesolutions.akka" % "akka-amqp" % "1.2",
+	  "net.databinder" %% "unfiltered-filter" % "0.5.0",
+  "net.databinder" %% "unfiltered-spec" % "0.5.0" % "test",
+   "net.databinder" %% "dispatch-http" % "0.8.5"
 )
   
   

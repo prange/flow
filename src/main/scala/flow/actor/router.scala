@@ -34,7 +34,8 @@ class ReadyEngine( context : Context ) {
 class OperatorActor( val ident : String, o : Operator[_, _] ) extends Actor {
 	val id = ident
 	def receive = {
-		case m @ _ ⇒ o.handle( m )( self ).unsafePerformIO
+		case m : OperatorInput ⇒ o.handle( m )( self ).unsafePerformIO
+		case _ => ()
 	}
 }
 

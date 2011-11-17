@@ -17,21 +17,24 @@ object Parser {
 		case e @ Elem( Some( "hrafnxservice" ), _, _, _, _ ) ⇒ e
 	} )
 
-
-	def parse( parse:StAXParser => Elem ) = {
+	def parse( parse : StAXParser ⇒ Elem ) = {
 		val parser = new StAXParser()
-		val elem = parse(parser)
+		val elem = parse( parser )
 		val objectEvents = elem \\ "ObjectEvent"
 		val aggregationEvents = elem \\ "AggregationEvent"
 		objectEvents ++ aggregationEvents
 	}
-	
-	def toEvent(elem:Elem)= {
-		val eventTime = elem.\( "eventTime" ).\( text ).headOption.map( dateTimeParser ).getOrElse(Time.now)
-		val eventType = elem.name
-		XmlEvent(eventTime,eventType,elem.toGroup)
+
+	def parseEvent( parse : StAXParser ⇒ Elem ) = {
+		val parser = new StAXParser()
+		parse( parser )
 	}
 
-		
+	def toEvent( elem : Elem ) = {
+		val eventTime = elem.\( "eventTime" ).\( text ).headOption.map( dateTimeParser ).getOrElse( Time.now )
+		val eventType = elem.name
+		XmlEvent( eventTime, eventType, elem.toGroup )
+	}
+
 
 }

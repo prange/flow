@@ -23,15 +23,61 @@ case class Wire( from : OutputPortId, to : InputPortId )
 
 case class PortBinding( port : InputPortId, operator : OperatorId )
 
-case class OperatorOutput[+M]( from : String, message : M ) {
+trait Either3[A, B, C] {
+	def fold[T]( one : A ⇒ T, two : B ⇒ T, three : C ⇒ T ) : T
+}
+
+case class OneOfThree[A, B, C]( a : A ) extends Either3[A, B, C] {
+	def fold[T]( one : A ⇒ T, two : B ⇒ T, three : C ⇒ T ) : T = one( a )
+}
+
+case class TwoOfThree[A, B, C]( b : B ) extends Either3[A, B, C] {
+	def fold[T]( one : A ⇒ T, two : B ⇒ T, three : C ⇒ T ) : T = two( b )
+}
+
+case class ThreeOfThree[A, B, C]( c : C ) extends Either3[A, B, C] {
+	def fold[T]( one : A ⇒ T, two : B ⇒ T, three : C ⇒ T ) : T = three( c )
+}
+
+case class OperatorOutput( from : String, message : Any ) {
 	def toInput( to : String ) = OperatorInput( to, message )
 }
 
-case class OperatorInput[+M]( to : String, message : M )
+case class OperatorInput( to : String, message : Any )
 
 trait OperatorState[I, O] extends ( I ⇒ ( O, OperatorState[I, O] ) )
 
-class Operator[I, O]( ident : String, inputRouter : PartialFunction[Any, I], outputRouter : O ⇒ List[OperatorOutput[_]], s : OperatorState[I, O] ) { self ⇒
+object Routers {
+
+	def oneInputRouter[I] : PartialFunction[Any, I] = {
+		case OperatorInput( _, msg : I ) ⇒ msg
+	}
+
+	def twoInputRouter[L, R]( leftId : String, rightId : String ) : PartialFunction[Any, Either[L, R]] = {
+		case OperatorInput( leftId, msg : L ) ⇒ Left( msg )
+		case OperatorInput( rightId, msg : R ) ⇒ Right( msg )
+	}
+
+	def oneOutputRouter[O]( id : String ) : O ⇒ List[OperatorOutput] =
+		o ⇒ List( OperatorOutput( id, o ) )
+
+	def optionOutputRouter[O]( id : String ) : Option[O] ⇒ List[OperatorOutput] =
+		opt ⇒ opt.map( OperatorOutput( id, _ ) ).toList
+
+	def eitherOutputRouter[L, R]( leftId : String, rightId : String ) : Either[L, R] ⇒ List[OperatorOutput] =
+		eith ⇒ List( eith.fold( l ⇒ OperatorOutput( leftId, l ), r ⇒ OperatorOutput( rightId, r ) ) )
+
+	def listOneOutputRouter[O]( id : String ) : List[O] ⇒ List[OperatorOutput] =
+		list ⇒ list.map( OperatorOutput( id, _ ) )
+
+	def listEitherOutputRouter[L, R]( leftId : String, rightId : String ) : List[Either[L, R]] ⇒ List[OperatorOutput] =
+		list ⇒ list.map( eith ⇒ eith.fold( l ⇒ OperatorOutput( leftId, l ), r ⇒ OperatorOutput( rightId, r ) ) )
+
+	def listEither3OutputRouter[A, B, C]( oneId : String, twoId : String, threeId : String ) : List[Either3[A, B, C]] ⇒ List[OperatorOutput] =
+		list ⇒ list.map( e3 ⇒ e3.fold( o ⇒ OperatorOutput( oneId, o ), t ⇒ OperatorOutput( twoId, t ), t ⇒ OperatorOutput( threeId, t ) ) )
+}
+
+class Operator[I, O]( ident : String, inputRouter : PartialFunction[OperatorInput, I], outputRouter : O ⇒ List[OperatorOutput], s : OperatorState[I, O] ) { self ⇒
 	def id = ident
 	type HandleReply = ActorRef ⇒ IO[Unit]
 	private var state : OperatorState[I, O] = s
@@ -46,9 +92,9 @@ class Operator[I, O]( ident : String, inputRouter : PartialFunction[Any, I], out
 			} yield ()
 	}
 
-	def handle : PartialFunction[Any, HandleReply] = {
+	def handle : PartialFunction[OperatorInput, HandleReply] = {
 		inputRouter andThen state andThen { t ⇒ update( t._1, t._2 ) } orElse {
-			case u @ _ ⇒ { ( a : ActorRef ) ⇒ io { } }
+			case u @ _ ⇒ { ( a : ActorRef ) ⇒ io {} }
 		}
 	}
 }
