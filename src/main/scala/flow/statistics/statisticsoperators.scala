@@ -39,6 +39,10 @@ case class Bucket(num: Int, label: String, count: BucketCount) {
 class HistogramState(windowLength: Duration, history: List[ProcessEndedEvent]) extends OperatorState[Either[ProcessEndedEvent, TimerEvent], Option[UpdatedHistogramEvent]] {
 
   def apply(e: Either[ProcessEndedEvent, TimerEvent]): (Option[UpdatedHistogramEvent], HistogramState) = {
+	  e match {
+	  case Left(event) ⇒ appendEvent(event)
+	  case Right(time)=> updateHistogram(time.time)
+	  }
 
     def appendEvent(event: ProcessEndedEvent) = {
       (None, new HistogramState(windowLength, event :: history))
@@ -58,10 +62,6 @@ class HistogramState(windowLength: Duration, history: List[ProcessEndedEvent]) e
       (Some(UpdatedHistogramEvent(buckets)),new HistogramState(windowLength,updateHistory))
     }
 
-    e match {
-      case Left(event) ⇒ appendEvent(event)
-      case Right(time)=> updateHistogram(time.time)
-    }
 
   }
 
