@@ -30,12 +30,12 @@ trait EpcisEvent extends ValuedEvent
 case class ObjectEvent( eventTime : DateTime, epcList : List[EPC], values : Map[String, String] ) extends EpcisEvent
 case class AggregationEvent( eventTime : DateTime, parent : EPC, childEPCs : List[EPC], values : Map[String, String] ) extends EpcisEvent
 
-case class ObservationEvent( eventTime : DateTime, values : Map[String, String] ) extends ValuedEvent
-
+case class ObservationEvent( eventTime : DateTime, values : Map[String, String] ) extends ValuedEvent {
+	def +( kv : Tuple2[String, String] ) = ObservationEvent( eventTime, values + kv )
+}
 object ObservationEvent {
 
-	def apply( eventTime : DateTime ):ObservationEvent = ObservationEvent( eventTime, Map() )
-
+	def apply( eventTime : DateTime ) : ObservationEvent = ObservationEvent( eventTime, Map() )
 }
 
 case class EventChain( id : String, events : NonEmptyList[ObservationEvent], data : Map[String, String] ) {

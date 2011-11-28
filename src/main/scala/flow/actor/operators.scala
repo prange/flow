@@ -49,11 +49,11 @@ trait OperatorState[I, O] extends ( I ⇒ ( O, OperatorState[I, O] ) )
 
 object Routers {
 
-	def oneInputRouter[I] : PartialFunction[Any, I] = {
+	def oneInputRouter[I] : PartialFunction[OperatorInput, I] = {
 		case OperatorInput( _, msg : I ) ⇒ msg
 	}
 
-	def twoInputRouter[L, R]( leftId : String, rightId : String ) : PartialFunction[Any, Either[L, R]] = {
+	def twoInputRouter[L, R]( leftId : String, rightId : String ) : PartialFunction[OperatorInput, Either[L, R]] = {
 		case OperatorInput( leftId, msg : L ) ⇒ Left( msg )
 		case OperatorInput( rightId, msg : R ) ⇒ Right( msg )
 	}
@@ -99,17 +99,12 @@ class Operator[I, O]( ident : String, inputRouter : PartialFunction[OperatorInpu
 	}
 }
 
-class FilterState( pred : XmlEvent ⇒ Boolean ) extends OperatorState[XmlEvent, Either[XmlEvent, XmlEvent]] {
-	def apply( e : XmlEvent ) = {
-		if ( pred( e ) )
-			( Left( e ), this )
-		else
-			( Right( e ), this )
-	}
+class FilterState[T]( filter : T ⇒ Either[T, T] ) extends OperatorState[T, Either[T, T]] {
+	def apply( e : T ) = ( filter( e ), this )
 }
 
-case class TransformerState( f : XmlEvent ⇒ XmlEvent ) extends OperatorState[XmlEvent, XmlEvent] {
-	def apply( e : XmlEvent ) = ( f( e ), this )
+case class TransformerState[I,O]( f : I ⇒ O ) extends OperatorState[I, O] {
+	def apply( e : I ) = ( f( e ), this )
 }
 
 case class SinkState( f : Any ⇒ Unit ) extends OperatorState[Any, Unit] {

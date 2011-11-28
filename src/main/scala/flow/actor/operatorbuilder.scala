@@ -13,9 +13,9 @@ object OperatorBuilder {
 
 	def source( id : String ) = new SourceBuilder( id )
 
-	def transform( name : String, f : XmlEvent ⇒ XmlEvent ) : TransformerBuilder = new TransformerBuilder( name, f )
+	def transform[I,O]( name : String, f : I ⇒ O ) : TransformerBuilder[I,O] = new TransformerBuilder( name, f )
 
-	def filter( name : String, predicate : XmlEvent ⇒ Boolean ) : FilterBuilder = new FilterBuilder( name, predicate )
+	def filter[T]( name : String, filter : T ⇒ Either[T,T] ) : FilterBuilder[T] = new FilterBuilder( name, filter )
 
 	def sink( name : String, f : Any ⇒ Unit ) : SinkBuilder = new SinkBuilder( name, f )
 }
@@ -56,7 +56,7 @@ class SourceBuilder( id : String ) extends OperatorBuilder {
 
 }
 
-class TransformerBuilder( id : String, f : XmlEvent ⇒ XmlEvent ) extends OperatorBuilder {
+class TransformerBuilder[I,O]( id : String, f : I=>O ) extends OperatorBuilder {
 	
 	lazy val operator = 
 		new Operator( id, oneInputRouter, oneOutputRouter((id+".out")), new TransformerState( f ) )
@@ -66,9 +66,9 @@ class TransformerBuilder( id : String, f : XmlEvent ⇒ XmlEvent ) extends Opera
 	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operator
 }
 
-class FilterBuilder( id : String, pred : XmlEvent ⇒ Boolean ) extends OperatorBuilder {
+class FilterBuilder[T]( id : String, filter : T ⇒ Either[T,T] ) extends OperatorBuilder {
 	lazy val operator = 
-		new Operator( id, oneInputRouter, eitherOutputRouter( id+".filtered", id+".unfiltered"), new FilterState( pred ) )
+		new Operator( id, oneInputRouter, eitherOutputRouter( id+".filtered", id+".unfiltered"), new FilterState( filter ) )
 	
 	val filtered = OutputBuilder( this, OutputPortId( id+".filtered" ) )
 	val unfiltered = OutputBuilder( this, OutputPortId( id+".unfiltered" ) )
