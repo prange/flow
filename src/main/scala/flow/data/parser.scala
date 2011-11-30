@@ -31,7 +31,7 @@ object Parser {
 	}
 
 	def toEvent( elem : Elem ) = {
-		val eventTime = elem.\( "eventTime" ).\( text ).headOption.map( dateTimeParser ).getOrElse( Time.now )
+		val eventTime = elem.\( "eventTime" ).\( text ).headOption.map( dateTimeParser ).getOrElse( Time.time(1) )
 		val eventType = elem.name
 		XmlEvent( eventTime, eventType, elem )
 	}

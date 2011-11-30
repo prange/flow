@@ -10,6 +10,15 @@ import effects._
 import javax.swing.InputMap
 import flow.event.XmlEvent
 import scala.xml.persistent.SetStorage
+import flow.event.EventChain
+import flow.event.ObservationEvent
+import flow.event.ProcessAdvancedEvent
+
+trait InputHandler[+I] {
+
+	def handle : PartialFunction[OperatorInput, I]
+
+}
 
 case class InputPortId( id : String )
 
@@ -49,14 +58,16 @@ trait OperatorState[I, O] extends ( I ⇒ ( O, OperatorState[I, O] ) )
 
 object Routers {
 
-	def oneInputRouter[I] : PartialFunction[OperatorInput, I] = {
-		case OperatorInput( _, msg : I ) ⇒ msg
+	def handle[I]( h : PartialFunction[OperatorInput, I] ) : InputHandler[I] = new InputHandler[I] {
+		def handle = h
 	}
 
-	def twoInputRouter[L, R]( leftId : String, rightId : String ) : PartialFunction[OperatorInput, Either[L, R]] = {
-		case OperatorInput( leftId, msg : L ) ⇒ Left( msg )
-		case OperatorInput( rightId, msg : R ) ⇒ Right( msg )
-	}
+	def eventChainInputRouter = handle[EventChain]( { case OperatorInput( _, msg : EventChain ) ⇒ msg } )
+	def observationEventChainInputRouter = handle[ObservationEvent]( { case OperatorInput( _, msg : ObservationEvent ) ⇒ msg } )
+	def paeInputHandler = handle[ProcessAdvancedEvent]( { case OperatorInput( _, msg : ProcessAdvancedEvent ) ⇒ msg } )
+
+	val oneObservationEventInputRouter = handle( { case OperatorInput( _, msg : ObservationEvent ) ⇒ msg } )
+	val oneXmlInputHandler = handle( { case OperatorInput( _, msg : XmlEvent ) ⇒ msg } )
 
 	def oneOutputRouter[O]( id : String ) : O ⇒ List[OperatorOutput] =
 		o ⇒ List( OperatorOutput( id, o ) )
@@ -77,7 +88,7 @@ object Routers {
 		list ⇒ list.map( e3 ⇒ e3.fold( o ⇒ OperatorOutput( oneId, o ), t ⇒ OperatorOutput( twoId, t ), t ⇒ OperatorOutput( threeId, t ) ) )
 }
 
-class Operator[I, O]( ident : String, inputRouter : PartialFunction[OperatorInput, I], outputRouter : O ⇒ List[OperatorOutput], s : OperatorState[I, O] ) { self ⇒
+class Operator[I, O]( ident : String, inputRouter : InputHandler[I], outputRouter : O ⇒ List[OperatorOutput], s : OperatorState[I, O] ) { self ⇒
 	def id = ident
 	type HandleReply = ActorRef ⇒ IO[Unit]
 	private var state : OperatorState[I, O] = s
@@ -93,7 +104,7 @@ class Operator[I, O]( ident : String, inputRouter : PartialFunction[OperatorInpu
 	}
 
 	def handle : PartialFunction[OperatorInput, HandleReply] = {
-		inputRouter andThen state andThen { t ⇒ update( t._1, t._2 ) } orElse {
+		inputRouter.handle andThen state andThen { t ⇒ update( t._1, t._2 ) } orElse {
 			case u @ _ ⇒ { ( a : ActorRef ) ⇒ io {} }
 		}
 	}
@@ -103,7 +114,7 @@ class FilterState[T]( filter : T ⇒ Either[T, T] ) extends OperatorState[T, Eit
 	def apply( e : T ) = ( filter( e ), this )
 }
 
-case class TransformerState[I,O]( f : I ⇒ O ) extends OperatorState[I, O] {
+case class TransformerState[I, O]( f : I ⇒ O ) extends OperatorState[I, O] {
 	def apply( e : I ) = ( f( e ), this )
 }
 

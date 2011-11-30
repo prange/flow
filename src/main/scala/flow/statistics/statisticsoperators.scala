@@ -70,11 +70,12 @@ class HistogramState(windowLength: Duration, history: List[ProcessEndedEvent]) e
 }
 
 class HistogramBuilder(id: String, windowLength: Duration) extends OperatorBuilder {
-  lazy val operator = {
-    val inputRouter: PartialFunction[Any, Either[ProcessEndedEvent, TimerEvent]] = {
+ import flow.actor.Routers._
+	lazy val operator = {
+    val inputRouter = handle[Either[ProcessEndedEvent,MinuteTimer]]({
       case OperatorInput(_, e: ProcessEndedEvent) ⇒ Left(e)
       case OperatorInput(_, t: MinuteTimer) ⇒ Right(t)
-    }
+    })
 
     val outputRouter: Option[UpdatedHistogramEvent] ⇒ List[OperatorOutput] = { o ⇒
       o.fold(e ⇒ List(OperatorOutput(id + ".updated", e)), List())

@@ -60,7 +60,7 @@ trait TimerEvent {
 
 case class SecondTimer( time : DateTime ) extends TimerEvent
 case class MinuteTimer( time : DateTime ) extends TimerEvent
-case class HourTimer( time : DateTime ) extends TimerEvent
+case class HourTimer( hour:Int, time : DateTime ) extends TimerEvent
 case class DayTimer( time : DateTime ) extends TimerEvent
 
 trait ProcessEvent

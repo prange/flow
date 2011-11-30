@@ -42,7 +42,7 @@ case class InMemoryAssembleState( definitions : List[ProcessDefinition], activeP
 	def update( newActiceProcesses : Map[String, EventChain] ) = InMemoryAssembleState( definitions, newActiceProcesses, idExtractor )
 
 	def apply( event : ObservationEvent ) = {
-
+		
 		def createOnly( id : String, event : ObservationEvent ) = {
 			val chain = EventChain.from( id, event )
 			( addToList( OneOfThree(ProcessStartedEvent( event.eventTime, chain )) ), addToMap( id, chain ) )
@@ -76,15 +76,17 @@ case class InMemoryAssembleState( definitions : List[ProcessDefinition], activeP
 
 		}
 
-		( events, update( newActiveProcesses ) )
+		val r =( events, update( newActiveProcesses ) )
+		r
 	}
 
 }
 
 class InMemoryAssembleStateBuilder( id : String, definitions : List[ProcessDefinition], idExtractor : ObservationEvent ⇒ String ) extends OperatorBuilder {
 	import flow.actor.Routers._
+	
 	lazy val operator = 
-		new Operator( id, oneInputRouter, listEither3OutputRouter[ProcessStartedEvent,ProcessAdvancedEvent,ProcessEndedEvent](id+".started",id+".advanced",id+".ended"), new InMemoryAssembleState( definitions, Map.empty, idExtractor ) )
+		new Operator( id, oneObservationEventInputRouter, listEither3OutputRouter[ProcessStartedEvent,ProcessAdvancedEvent,ProcessEndedEvent](id+".started",id+".advanced",id+".ended"), new InMemoryAssembleState( definitions, Map.empty, idExtractor ) )
 	val started = OutputBuilder( this, OutputPortId( id+".started" ) )
 	val advanced = OutputBuilder( this, OutputPortId( id+".advanced" ) )
 	val ended = OutputBuilder( this, OutputPortId( id+".ended" ) )

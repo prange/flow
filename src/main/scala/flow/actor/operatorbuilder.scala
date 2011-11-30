@@ -13,16 +13,18 @@ object OperatorBuilder {
 
 	def source( id : String ) = new SourceBuilder( id )
 
-	def transform[I,O]( name : String, f : I ⇒ O ) : TransformerBuilder[I,O] = new TransformerBuilder( name, f )
+	def transform[I, O]( name : String, f : I ⇒ O, h : InputHandler[I] ) : TransformerBuilder[I, O] = new TransformerBuilder( name, f,h )
 
-	def filter[T]( name : String, filter : T ⇒ Either[T,T] ) : FilterBuilder[T] = new FilterBuilder( name, filter )
+		def multtransform[I, O]( name : String, f : I ⇒ List[O], h : InputHandler[I] ) : MultTransformerBuilder[I, O] = new MultTransformerBuilder( name, f,h )
+	
+	def filter[T]( name : String, filter : T ⇒ Either[T, T], h : InputHandler[T] ) : FilterBuilder[T] = new FilterBuilder( name, filter,h )
 
 	def sink( name : String, f : Any ⇒ Unit ) : SinkBuilder = new SinkBuilder( name, f )
 }
 
 trait ConnectorBuilder {
 	def update( context : Context ) : Context
-	def &(other:ConnectorBuilder) = new ComposedConnectorBuilder(this,other)
+	def &( other : ConnectorBuilder ) = new ComposedConnectorBuilder( this, other )
 }
 
 class LeafConnectorBuilder( input : InputBuilder, output : OutputBuilder ) extends ConnectorBuilder {
@@ -56,20 +58,30 @@ class SourceBuilder( id : String ) extends OperatorBuilder {
 
 }
 
-class TransformerBuilder[I,O]( id : String, f : I=>O ) extends OperatorBuilder {
-	
-	lazy val operator = 
-		new Operator( id, oneInputRouter, oneOutputRouter((id+".out")), new TransformerState( f ) )
+class TransformerBuilder[I, O]( id : String, f : I ⇒ O, h : InputHandler[I] ) extends OperatorBuilder {
+
+	lazy val operator =
+		new Operator( id, h, oneOutputRouter( ( id+".out" ) ), new TransformerState( f ) )
 
 	val out = OutputBuilder( this, OutputPortId( id+".out" ) )
 	val in = InputBuilder( this, InputPortId( id+".in" ) )
 	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operator
 }
 
-class FilterBuilder[T]( id : String, filter : T ⇒ Either[T,T] ) extends OperatorBuilder {
-	lazy val operator = 
-		new Operator( id, oneInputRouter, eitherOutputRouter( id+".filtered", id+".unfiltered"), new FilterState( filter ) )
-	
+class MultTransformerBuilder[I, O]( id : String, f : I ⇒ List[O], h : InputHandler[I] ) extends OperatorBuilder {
+
+	lazy val operator =
+		new Operator( id, h, listOneOutputRouter( ( id+".out" ) ), new TransformerState( f ) )
+
+	val out = OutputBuilder( this, OutputPortId( id+".out" ) )
+	val in = InputBuilder( this, InputPortId( id+".in" ) )
+	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operator
+}
+
+class FilterBuilder[T]( id : String, filter : T ⇒ Either[T, T], h : InputHandler[T] ) extends OperatorBuilder {
+	lazy val operator =
+		new Operator( id, h, eitherOutputRouter( id+".filtered", id+".unfiltered" ), new FilterState( filter ) )
+
 	val filtered = OutputBuilder( this, OutputPortId( id+".filtered" ) )
 	val unfiltered = OutputBuilder( this, OutputPortId( id+".unfiltered" ) )
 	val in = InputBuilder( this, InputPortId( id+".in" ) )
@@ -77,10 +89,11 @@ class FilterBuilder[T]( id : String, filter : T ⇒ Either[T,T] ) extends Operat
 }
 
 class SinkBuilder( id : String, f : Any ⇒ Unit ) extends OperatorBuilder {
-		lazy val operator = {
-		val inputRouter : PartialFunction[Any, Any] = {
+	lazy val operator = {
+		import Routers._
+		val inputRouter = handle({
 			case OperatorInput( _, e : Any ) ⇒ e
-		}
+		})
 
 		val outputRouter : Unit ⇒ List[OperatorOutput] = e ⇒ List()
 		new Operator( id, inputRouter, outputRouter, new SinkState( f ) )
