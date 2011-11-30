@@ -30,9 +30,9 @@ object HistogramBuilder {
 case class BucketCount(value: Int)
 case class Bucket(num: Int, label: String, count: BucketCount) {
   def increment = Bucket(num, label, BucketCount(count.value + 1))
-  
+
   override def toString = {
-    label+": "+count.value
+    label + ": " + count.value
   }
 }
 
@@ -48,21 +48,20 @@ class HistogramState(windowLength: Duration, history: List[ProcessEndedEvent]) e
 
       val updateHistory = history.filter(e ⇒ e.timestamp.isAfter(time.minus(windowLength)))
       val days = updateHistory.map(getDurationInDays)
-      val max = (Days.days(10)::days).maxBy(_.getDays())
+      val max = (Days.days(10) :: days).maxBy(_.getDays())
 
-      val count = days.foldLeft(Map[Int,Int]()){(map,days)=>
-        map + (days.getDays() -> (map.getOrElse(days.getDays(),0)+1))
+      val count = days.foldLeft(Map[Int, Int]()) { (map, days) ⇒
+        map + (days.getDays() -> (map.getOrElse(days.getDays(), 0) + 1))
       }
-      
-      val buckets = (0 to max.getDays()).map(day=>Bucket(day,day.toString+" days",BucketCount(count.getOrElse(day,0)))).toList
-      (Some(UpdatedHistogramEvent(buckets)),new HistogramState(windowLength,updateHistory))
+
+      val buckets = (0 to max.getDays()).map(day ⇒ Bucket(day, day.toString + " days", BucketCount(count.getOrElse(day, 0)))).toList
+      (Some(UpdatedHistogramEvent(buckets)), new HistogramState(windowLength, updateHistory))
     }
 
     e match {
       case Left(event) ⇒ appendEvent(event)
-      case Right(time)=> updateHistogram(time.time)
+      case Right(time) ⇒ updateHistogram(time.time)
     }
-
   }
 
   val getDurationInDays: ProcessEndedEvent ⇒ Days = e ⇒ e.eventchain.interval.toDuration().toStandardSeconds().toStandardDays()
