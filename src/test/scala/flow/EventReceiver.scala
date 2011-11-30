@@ -1,0 +1,5 @@
+package flow
+
+object EventReceiver {
+
+}
