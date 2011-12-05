@@ -2,12 +2,13 @@ package flow.event
 import org.joda.time.DateTime
 import org.joda.time.Interval
 import com.codecommit.antixml._
-import flow.businessrules._
+import flow.promises._
 import flow.statistics.Bucket
 import flow._
 import scalaz.Scalaz._
 import scalaz._
 import com.codecommit.antixml.Zipper
+import weka.core.Instances
 
 object Events {
 
@@ -63,13 +64,16 @@ case class MinuteTimer( time : DateTime ) extends TimerEvent
 case class HourTimer( hour:Int, time : DateTime ) extends TimerEvent
 case class DayTimer( time : DateTime ) extends TimerEvent
 
-trait ProcessEvent
-case class ProcessStartedEvent( timstamp : DateTime, eventchain : EventChain ) extends ProcessEvent
+trait ProcessEvent{
+  val timestamp : DateTime
+  val eventchain : EventChain 
+}
+
+case class ProcessStartedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 case class ProcessAdvancedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 case class ProcessEndedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 
 case class UpdatedHistogramEvent( histogram : List[Bucket] )
-case class BusinessRuleViolatedEvent( rule : BusinessRule, process : ProcessAdvancedEvent )
+case class PromiseViolatedEvent( promise : Promise, process : ProcessAdvancedEvent )
 case class PredictedViolationEvent( violations : List[( String, Double )], process : ProcessAdvancedEvent )
-
-
+case class UpdatedTrainingsetEvent( promise: Promise, dataset: Instances)
