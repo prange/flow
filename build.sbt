@@ -21,11 +21,12 @@ libraryDependencies ++= Seq(
 	"org.scalaz" %% "scalaz-core" % "6.0.2",
 	"org.specs2" %% "specs2" % "1.6.1",
 	"weka" % "weka" % "3.6.3",
+	"net.liftweb" %% "lift-json" % "2.4-M4",
 	"se.scalablesolutions.akka" % "akka-actor" % "1.2",
-	"se.scalablesolutions.akka" % "akka-amqp" % "1.2",
 	  "net.databinder" %% "unfiltered-filter" % "0.5.0",
   "net.databinder" %% "unfiltered-spec" % "0.5.0" % "test",
-   "net.databinder" %% "dispatch-http" % "0.8.5"
+   "net.databinder" %% "dispatch-http" % "0.8.5",
+   "com.rabbitmq" % "amqp-client" % "2.7.0"
 )
   
   

@@ -14,6 +14,10 @@ import flow.event.EventChain
 import flow.event.ObservationEvent
 import flow.event.ProcessAdvancedEvent
 
+trait Publisher{
+	def publish( data : List[String] ) : IO[Unit]
+}
+
 trait InputHandler[+I] {
 
 	def handle : PartialFunction[OperatorInput, I]
@@ -88,9 +92,13 @@ object Routers {
 		list ⇒ list.map( e3 ⇒ e3.fold( o ⇒ OperatorOutput( oneId, o ), t ⇒ OperatorOutput( twoId, t ), t ⇒ OperatorOutput( threeId, t ) ) )
 }
 
-class Operator[I, O]( ident : String, inputRouter : InputHandler[I], outputRouter : O ⇒ List[OperatorOutput], s : OperatorState[I, O] ) { self ⇒
-	def id = ident
+trait Op[I,O]{
 	type HandleReply = ActorRef ⇒ IO[Unit]
+	def handle : PartialFunction[OperatorInput, HandleReply] 
+}
+
+class Operator[I, O]( ident : String, inputRouter : InputHandler[I], outputRouter : O ⇒ List[OperatorOutput], s : OperatorState[I, O] ) extends Op[I,O] { self ⇒
+	def id = ident
 	private var state : OperatorState[I, O] = s
 
 	private val updateState : OperatorState[I, O] ⇒ ActorRef ⇒ IO[Unit] = s ⇒ a ⇒ io { state = s }

@@ -6,6 +6,8 @@ import akka.actor.Actor
 import scalaz._
 import Scalaz._
 import Routers._
+import flow.dataprovider.WidgetDashboard
+import scalaz.effects.IO
 
 object OperatorBuilder {
 
@@ -13,13 +15,15 @@ object OperatorBuilder {
 
 	def source( id : String ) = new SourceBuilder( id )
 
-	def transform[I, O]( name : String, f : I ⇒ O, h : InputHandler[I] ) : TransformerBuilder[I, O] = new TransformerBuilder( name, f,h )
+	def transform[I, O]( name : String, f : I ⇒ O, h : InputHandler[I] ) : TransformerBuilder[I, O] = new TransformerBuilder( name, f, h )
 
-		def multtransform[I, O]( name : String, f : I ⇒ List[O], h : InputHandler[I] ) : MultTransformerBuilder[I, O] = new MultTransformerBuilder( name, f,h )
-	
-	def filter[T]( name : String, filter : T ⇒ Either[T, T], h : InputHandler[T] ) : FilterBuilder[T] = new FilterBuilder( name, filter,h )
+	def multtransform[I, O]( name : String, f : I ⇒ List[O], h : InputHandler[I] ) : MultTransformerBuilder[I, O] = new MultTransformerBuilder( name, f, h )
+
+	def filter[T]( name : String, filter : T ⇒ Either[T, T], h : InputHandler[T] ) : FilterBuilder[T] = new FilterBuilder( name, filter, h )
 
 	def sink( name : String, f : Any ⇒ Unit ) : SinkBuilder = new SinkBuilder( name, f )
+	
+	def publishingSink(name:String, f:Any=>IO[List[String]])  = new PublishingSinkBuilder(name,f)
 }
 
 trait ConnectorBuilder {
@@ -46,6 +50,9 @@ case class InputBuilder( operatorBuilder : OperatorBuilder, input : InputPortId 
 case class OutputBuilder( operatorBuilder : OperatorBuilder, output : OutputPortId ) {
 	def update( context : Context ) : Context = operatorBuilder.update( context )
 	def -->( input : InputBuilder ) : ConnectorBuilder = new LeafConnectorBuilder( input, this )
+	def --[I, O]( transformer : TransformerBuilder[I, O] ) = new {
+		def -->( input : InputBuilder ) : ConnectorBuilder = -->( transformer.in ) & ( transformer.out --> input )
+	}
 }
 
 trait OperatorBuilder {
@@ -91,16 +98,41 @@ class FilterBuilder[T]( id : String, filter : T ⇒ Either[T, T], h : InputHandl
 class SinkBuilder( id : String, f : Any ⇒ Unit ) extends OperatorBuilder {
 	lazy val operator = {
 		import Routers._
-		val inputRouter = handle({
+		val inputRouter = handle( {
 			case OperatorInput( _, e : Any ) ⇒ e
-		})
+		} )
 
 		val outputRouter : Unit ⇒ List[OperatorOutput] = e ⇒ List()
 		new Operator( id, inputRouter, outputRouter, new SinkState( f ) )
 	}
-	val out = OutputBuilder( this, OutputPortId( id+".out" ) )
 	val in = InputBuilder( this, InputPortId( id+".in" ) )
 	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operator
+}
+
+class PublishingSinkBuilder( id : String, f : Any ⇒ IO[List[String]] ) extends OperatorBuilder {
+	lazy val operatorbuilder = {
+		import Routers._
+		val inputRouter = handle( {
+			case OperatorInput( _, e : Any ) ⇒ e
+		} )
+
+		val outputRouter : Unit ⇒ List[OperatorOutput] = e ⇒ List()
+		new Builder(){
+			def apply(context:Context)= new Operator( id, inputRouter, outputRouter, new PublisherState( f ,context.publishers(id)) )
+		}
+	}
+	val in = InputBuilder( this, InputPortId( id+".in" ) )
+	def update( context : Context ) = context + PortBinding( InputPortId( id+".in" ), OperatorId( id ) ) + operatorbuilder
+}
+
+case class PublisherState( f : Any ⇒ IO[List[String]], publisher : Publisher ) extends OperatorState[Any, Unit] {
+	def apply( e : Any ) = {
+		val eff = for{
+			data<-f(e);
+			_<-publisher.publish(data)
+		}yield()
+		( eff.unsafePerformIO, this )
+	}
 }
 
 

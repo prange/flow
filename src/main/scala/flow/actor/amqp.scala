@@ -1,94 +1,111 @@
 package flow.actor
-import akka.amqp.AMQP._
-import akka.amqp._
-import akka.actor._
-import Actor._
+
 import scalaz.Scalaz._
 import scalaz.effects._
-import akka.amqp.AMQP.ConsumerParameters
 import akka.event.EventHandler
-import com.rabbitmq.client.Address
 import scala.io.Source
 import flow.event.XmlEvent
+import com.rabbitmq._
+import client._
+
+case class Username( name : String )
+case class Password( pw : String )
+case class Address( host : String, port : Int )
+
+object Address {
+	def apply( host : String ) : Address = Address( host, 5672 )
+}
 
 object FlowAmqp {
-
-	def connector(address:Address) = new ReadyAmqpConnector(address)
-	
+	type AmqpConfig = Channel ⇒ Channel
+	def cfg( f : Channel ⇒ Unit ) = new AmqpConfig {
+		def apply( c : Channel ) : Channel = { f( c ); c }
+	}
+	def connector( username : Username, password : Password, address : Address ) = ReadyAmqpConnector( username, password, address )
 }
-// new Address( "myhost.com", 5672 )
-class ReadyAmqpConnector(address:Address, addresses:Address*) {
+
+object ReadyAmqpConnector {
+	def apply( username : Username, password : Password, address : Address ) = new ReadyAmqpConnector( username, password, address, List() )
+
+}
+import FlowAmqp._
+class ReadyAmqpConnector( username : Username, password : Password, address : Address, configurations : List[AmqpConfig] ) {
+
+	def cfg( f : AmqpConfig ) = new ReadyAmqpConnector( username, password, address, f :: configurations )
 
 	def start() = io {
-		val myAddresses = address +: addresses
+		val factory = new ConnectionFactory()
+		factory.setUsername( username.name )
+		factory.setPassword( password.pw )
+		factory.setHost( address.host )
+		factory.setPort( address.port )
+		val connection = factory.newConnection()
 
-		//Connection callback
-		val connxCallback = actorOf( new Actor {
-			def receive = {
-				case Connected ⇒ EventHandler.info( this, "Connection callback: Connected!" )
-				case Reconnecting ⇒ EventHandler.info( this, "Connection callback: Reconnecting!" )
-				case Disconnected ⇒ EventHandler.info( this, "Connection callback: Disconnected!" )
-			}
-		} )
-		val connectionParameters = ConnectionParameters( myAddresses.toArray, "guest", "askAninja", connectionCallback = Some( connxCallback ) )
-
-		val connection = AMQP.newConnection( connectionParameters ).start()
-		new RunningAmqpConnector(connection,this)
+		val channel = connection.createChannel()
+		configurations.foreach( _.apply( channel ) )
+		channel.close()
+		new RunningAmqpConnector( connection, this )
 	}
 }
 
-class RunningAmqpConnector(connection:ActorRef,state:ReadyAmqpConnector){
-	
+class RunningAmqpConnector( connection : Connection, state : ReadyAmqpConnector ) {
+
 	def connx = connection
-	
+
 	def stop() = io {
-		connection.stop()
+		connection.close()
 		state
 	}
 }
 
+class ReadyAmqpProducer( id : String, exchangeName : String ) {
 
-class ReadyAmqpSink( id : String, queueName : String ) {
-	val exchangeParameters = ExchangeParameters( queueName, Direct )
-
-	def start( connection : ActorRef ) = io {
-		val producer = AMQP.newProducer( connection, ProducerParameters( Some( exchangeParameters ), producerId = Some( id ) ) ).start()
-		new RunningAmqpSink( producer, this )
+	def start( connection : Connection ) = io {
+		val channel = connection.createChannel()
+		new RunningAmqpProducer( channel, exchangeName, this )
 	}
 }
 
-class RunningAmqpSink( producer : ActorRef, state : ReadyAmqpSink ) extends ( XmlEvent ⇒ Unit ) {
+class RunningAmqpProducer( channel : Channel, exchangeName : String, state : ReadyAmqpProducer ) extends ( String ⇒ IO[Unit] ) {
 
-	def apply( event : XmlEvent ) : Unit = producer ! Message( event.data.toString.getBytes, "some.routing.key" )
+	def apply( message : String ) : IO[Unit] = io {
+		val messageBodyBytes = message.getBytes()
+		channel.basicPublish( exchangeName, "somekey", null, messageBodyBytes )
+	}
 
 	def stop() = io {
-		producer.stop()
+		channel.close()
 		state
 	}
 }
 
-class ReadyAmqpSource( queueName : String, engine : RunningEngine ) {
+class ReadyAmqpConsumer( id : String, queueName : String, f : String ⇒ IO[Unit] ) {
 
 	import flow.data.Parser._
 
-	val exchangeParameters = ExchangeParameters( queueName, Direct )
-
-	def start( connection : ActorRef ) = io {
+	def start( connection : Connection ) = io {
 		def byteToString( bytes : Array[Byte] ) = new String( bytes )
-		def parseString( string : String ) = parseEvent( _.fromSource( Source.fromString( string ) ) )
-		def parseBytes( bytes : Array[Byte] ) = toEvent( parseString( byteToString( bytes ) ) )
-		val myConsumer = AMQP.newConsumer( connection, ConsumerParameters( "some.routing.key", actorOf( new Actor {
-			def receive = {
-				case Delivery( payload, _, _, _, _, _ ) ⇒ engine.!( queueName, parseBytes( payload ) ).unsafePerformIO
+
+		val autoAck = false
+		val channel = connection.createChannel()
+
+		val consumer = new DefaultConsumer( channel ) {
+			override def handleDelivery( consumerTag : String, envelope : Envelope, properties : AMQP.BasicProperties, body : Array[Byte] ) {
+				val routingKey = envelope.getRoutingKey
+				val contentType = properties.getContentType
+				val deliveryTag = envelope.getDeliveryTag
+				f( new String( body ) ).unsafePerformIO
+				channel.basicAck( deliveryTag, false );
 			}
-		} ), None, Some( exchangeParameters ) ) ).start()
-		new RunningAmqpSource( myConsumer, this )
+		}
+		val cid = channel.basicConsume( queueName, autoAck, id, consumer )
+		new RunningAmqpConsumer( consumer, this )
 	}
 }
 
-class RunningAmqpSource( consumer : ActorRef, state : ReadyAmqpSource ) {
+class RunningAmqpConsumer( consumer : DefaultConsumer, state : ReadyAmqpConsumer ) {
 	def stop() = io {
-		consumer.stop()
+		consumer.getChannel().close()
 		state
 	}
 

@@ -14,6 +14,7 @@ import flow.epcis.ProductEnricher
 import flow.actor.Context
 import flow.actor.ReadyEngine
 import flow.actor.Routers._
+import scalaz.effects.IO
 
 class RouteBuilderSpec extends Specification {
 
@@ -23,55 +24,58 @@ class RouteBuilderSpec extends Specification {
 
 	val repairProcessDefinition = ProcessDefinition( "repair", where field "disposition" contains "active", where field "disposition" contains "from_workshop" )
 	val customerPickup = ProcessDefinition( "pickup", where field "disposition" contains "from_workshop", where field "disposition" contains "inactive" )
+	val sim = EventSimulator.init( Time.now.unsafePerformIO, 10000 )
+	//	"When building routes one" should {
 
-//	"When building routes one" should {
+	//		"Create Connectors" in {
+	//			val engine = createEngine
+	//
+	//			val exec = for {
+	//				e ← createEngine.start();
+	//				_ ← e ! ( "test", Parser.toEvent( observations.head ) );
+	//				_ ← Threads.sleep( 3000 );
+	//				s ← e.stop
+	//			} yield ( s )
+	//			exec.unsafePerformIO
+	//			success
+	//
+	//		}
+	//
+	//		"Handle simulated events" in {
+	//			val engine = createEngine
+	//
+	//			val exec = for {
+	//				e ← createEngine.start();
+	//				sim ← new DirectTest( 20000, "test", e ).run;
+	//				_ ← Threads.sleep( 10000 );
+	//				_ ← sim.stop
+	//				s ← e.stop
+	//			} yield ( s )
+	//			exec.unsafePerformIO
+	//			success
+	//		}
+	//
+	//	}
 
-//		"Create Connectors" in {
-//			val engine = createEngine
+//	"Using RabbitMQ" should {
+//		"Exchange events with server" in {
 //
+//			val engine = createEngine
+//			val eventToString : XmlEvent ⇒ IO[Unit] = e ⇒ for {
+//				time ← Time.now;
+//				_ ← client.apply( e.data.toString )
+//			} yield ()
 //			val exec = for {
 //				e ← createEngine.start();
-//				_ ← e ! ( "test", Parser.toEvent( observations.head ) );
-//				_ ← Threads.sleep( 3000 );
-//				s ← e.stop
-//			} yield ( s )
-//			exec.unsafePerformIO
-//			success
-//
-//		}
-//
-//		"Handle simulated events" in {
-//			val engine = createEngine
-//
-//			val exec = for {
-//				e ← createEngine.start();
-//				sim ← new DirectTest( 20000, "test", e ).run;
-//				_ ← Threads.sleep( 10000 );
+//				sim ← new RabbitMQTest( EventSimulator.domain, "test", e, sim ).run;
+//				_ ← Threads.sleep( 20000 );
 //				_ ← sim.stop
 //				s ← e.stop
 //			} yield ( s )
 //			exec.unsafePerformIO
 //			success
 //		}
-//
 //	}
-	
-	"Using RabbitMQ" should {
-			"Exchange events with server" in {
-
-				val engine = createEngine
-
-				val exec = for {
-					e ← createEngine.start();
-					sim ← new RabbitMQTest(EventSimulator.domain, 100000, "test", e ).run;
-					_ ← Threads.sleep( 20000 );
-					_ ← sim.stop
-					s ← e.stop
-				} yield ( s )
-				exec.unsafePerformIO
-				success
-			}
-		}
 
 	def parseObservations = Parser.parse( _.fromSource( Source.fromFile( filename ) ) )
 
@@ -91,6 +95,6 @@ class RouteBuilderSpec extends Specification {
 
 		val context = builder.update( Context() )
 
-		new ReadyEngine( context )
+		new ReadyEngine(  ).start(context)
 	}
 }
