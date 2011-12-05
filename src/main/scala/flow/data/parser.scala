@@ -17,6 +17,8 @@ object Parser {
 		case e @ Elem( Some( "hrafnxservice" ), _, _, _, _ ) ⇒ e
 	} )
 
+	def parseString( string : String ) = parseEvent( _.fromSource( Source.fromString( string ) ) )
+	
 	def parse( parse : StAXParser ⇒ Elem ) = {
 		val parser = new StAXParser()
 		val elem = parse( parser )
@@ -31,10 +33,9 @@ object Parser {
 	}
 
 	def toEvent( elem : Elem ) = {
-		val eventTime = elem.\( "eventTime" ).\( text ).headOption.map( dateTimeParser ).getOrElse( Time.time(1) )
+		val eventTime = elem.\( "eventTime" ).\( text ).headOption.map( dateTimeParser ).getOrElse( Time.time( 1 ) )
 		val eventType = elem.name
 		XmlEvent( eventTime, eventType, elem )
 	}
-
 
 }

@@ -43,8 +43,8 @@ case class InMemoryAssembleState( definitions : List[ProcessDefinition], activeP
 
 	def apply( event : ObservationEvent ) = {
 		
-		def createOnly( id : String, event : ObservationEvent ) = {
-			val chain = EventChain.from( id, event )
+		def createOnly( id : String, name:String, event : ObservationEvent ) = {
+			val chain = EventChain.from( id, name, event )
 			( addToList( OneOfThree(ProcessStartedEvent( event.eventTime, chain )) ), addToMap( id, chain ) )
 		}
 
@@ -66,7 +66,7 @@ case class InMemoryAssembleState( definitions : List[ProcessDefinition], activeP
 			val doEnd = definition.to( event )
 
 			val ( addList, addMap ) = ( doStart, doEnd, currentProcess ) match {
-				case ( true, _, None ) ⇒ createOnly( id, event )
+				case ( true, _, None ) ⇒ createOnly( id,definition.name, event )
 				case ( false, false, Some( chain ) ) ⇒ advanceOnly( id, event, chain )
 				case ( _, true, Some( chain ) ) ⇒ advanceAndEnd( id, event, chain )
 				case _ ⇒  ( identity[List[E3]] _, identity[Map[String, EventChain]] _ )

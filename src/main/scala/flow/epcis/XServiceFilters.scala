@@ -12,6 +12,10 @@ import flow.Time
 import flow.event.ObservationEvent
 import flow.event.ObservationEvent
 
+object XService{
+	val transform = EpcisTransform() andThen ObservationTransform() andThen ProductEnricher()
+}
+
 case class EpcisTransform() extends ( XmlEvent ⇒ Either[AggregationEvent, ObjectEvent] ) {
 
 	def apply( xmle : XmlEvent ) : Either[AggregationEvent, ObjectEvent] = {

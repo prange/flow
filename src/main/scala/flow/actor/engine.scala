@@ -17,33 +17,35 @@ import flow.event.HourTimer
 import org.joda.time.Days
 import flow.event.DayTimer
 import flow.JavaTimer
+import scalaz.effects.IO
 
-class ReadyEngine( context : Context ) {
+class ReadyEngine(  ) {
 
-	def start() = io {
+	def start(context : Context) : IO[RunningEngine] = io {
 		val routes = context.connections.toList
-		val operatorRefs = context.operators.toList.map( o ⇒ ( o.id, Actor.actorOf( new OperatorActor( o.id, o ) ).start() ) )
+		val operators = context.operators.toList::: context.builders.toList.map( _.apply( context ) )
+		val operatorRefs = operators.toList.map( o ⇒ ( o.id, Actor.actorOf( new OperatorActor( o.id, o ) ).start() ) )
 		val operatorMap = operatorRefs.toMap
 		val bindings = context.bindings.map( b ⇒ ( b.port, operatorMap( b.operator.id ) ) ).toMap
 
 		val router = Actor.actorOf( new Router( routes, bindings ) ).start()
-		val timerSource = new TimerEventSource(router).start().unsafePerformIO
-		new RunningEngine( bindings.values, router, this,timerSource )
+		val timerSource = new TimerEventSource( router ).start().unsafePerformIO
+		new RunningEngine( bindings.values, router, this, timerSource )
 	}
 
 }
 
-class OperatorActor( val ident : String, o : Operator[_, _] ) extends Actor {
+class OperatorActor( val ident : String, o : Op[_, _] ) extends Actor {
 	val id = ident
 	def receive = {
 		case m : OperatorInput ⇒ o.handle( m )( self ).unsafePerformIO
-		case _ => ()
+		case _ ⇒ ()
 	}
 }
 
-class RunningEngine( operators : Iterable[ActorRef], router : ActorRef, state : ReadyEngine,timerSource:RunningTimerEventSource ) {
+class RunningEngine( operators : Iterable[ActorRef], router : ActorRef, state : ReadyEngine, timerSource : RunningTimerEventSource ) {
 
-	def !( to : String, event : XmlEvent ) = io {if(router.isRunning) router ! OperatorOutput( to, event ) }
+	def !( to : String, event : XmlEvent ) = io { if ( router.isRunning ) router ! OperatorOutput( to, event ) }
 
 	def stop = io {
 		timerSource.stop().unsafePerformIO
@@ -61,8 +63,8 @@ class Router( routes : List[Wire], bindings : Map[InputPortId, ActorRef] ) exten
 	def receive = {
 		case o @ OperatorOutput( from, event ) ⇒ {
 			val targets = routes.filter( w ⇒ w.from.id === from ).map( w ⇒ ( w.to.id, bindings( w.to ) ) )
-			
-			targets.foreach( t ⇒if(t._2.isRunning){ t._2 ! o.toInput( t._1 ) })
+
+			targets.foreach( t ⇒ if ( t._2.isRunning ) { t._2 ! o.toInput( t._1 ) } )
 		}
 		case t @ OperatorInput( _, te : TimerEvent ) ⇒ {
 			bindings.values.toSet[ActorRef].foreach( ref ⇒ ref ! t )
@@ -75,15 +77,18 @@ class Router( routes : List[Wire], bindings : Map[InputPortId, ActorRef] ) exten
 }
 
 object Context {
-	def apply() = new Context( Set(), Set(), Set() )
+	def apply() = new Context( Set(), Set(), Set(), Set(), Map() )
 }
+trait Builder extends ( Context ⇒ Operator[_, _] )
 
-case class Context( operators : Set[Operator[_, _]], bindings : Set[PortBinding], connections : Set[Wire] ) {
+case class Context( operators : Set[Operator[_, _]], bindings : Set[PortBinding], connections : Set[Wire], builders : Set[Builder], publishers : Map[String, Publisher] ) {
 
 	def +( op : Operator[_, _] ) = copy( operators = operators + op )
 	def +( binding : PortBinding ) = copy( bindings = bindings + binding )
 	def +( bindingI : Iterable[PortBinding] ) = copy( bindings = bindings ++ bindingI )
 	def +( wire : Wire ) = copy( connections = connections + wire )
+	def +( builder : Builder ) = copy( builders = builders + builder )
+	def publisher( publisher : Tuple2[String, Publisher] ) = copy( publishers = publishers + publisher )
 
 	override def toString = {
 		"Context[\n"+
@@ -103,11 +108,11 @@ class TimerEventSource( callback : ActorRef ) {
 		def hour = Time.nextHourAfter( time )
 		def midnight = Time.nextMidnightAfter( time )
 		val timer = new JavaTimer( true )
-		timer.schedule( sec, Seconds.seconds( 1 ).toStandardDuration() ) { if(callback.isRunning)callback ! new OperatorInput( "*", SecondTimer( Time.now.unsafePerformIO ) ) }
-		timer.schedule( min, Minutes.minutes( 1 ).toStandardDuration() ) {  if(callback.isRunning)callback ! new OperatorInput( "*", MinuteTimer( Time.now.unsafePerformIO ) ) }
-		timer.schedule( min, Hours.hours( 1 ).toStandardDuration() ) { if(callback.isRunning) callback ! new OperatorInput( "*", HourTimer( Time.now.unsafePerformIO.getHourOfDay(),Time.now.unsafePerformIO ) ) }
-		timer.schedule( midnight.toInterval().getStart(), Days.days( 1 ).toStandardDuration() ) { if(callback.isRunning) callback ! new OperatorInput( "*", DayTimer( Time.now.unsafePerformIO ) ) }
-		new RunningTimerEventSource(timer,callback)
+		timer.schedule( sec, Seconds.seconds( 1 ).toStandardDuration() ) { if ( callback.isRunning ) callback ! new OperatorInput( "*", SecondTimer( Time.now.unsafePerformIO ) ) }
+		timer.schedule( min, Minutes.minutes( 1 ).toStandardDuration() ) { if ( callback.isRunning ) callback ! new OperatorInput( "*", MinuteTimer( Time.now.unsafePerformIO ) ) }
+		timer.schedule( min, Hours.hours( 1 ).toStandardDuration() ) { if ( callback.isRunning ) callback ! new OperatorInput( "*", HourTimer( Time.now.unsafePerformIO.getHourOfDay(), Time.now.unsafePerformIO ) ) }
+		timer.schedule( midnight.toInterval().getStart(), Days.days( 1 ).toStandardDuration() ) { if ( callback.isRunning ) callback ! new OperatorInput( "*", DayTimer( Time.now.unsafePerformIO ) ) }
+		new RunningTimerEventSource( timer, callback )
 	}
 }
 
@@ -115,7 +120,7 @@ class RunningTimerEventSource( timer : JavaTimer, callback : ActorRef ) {
 
 	def stop() = io {
 		timer.stop()
-		println("RunningTimerEventSource: Stopped")
+		println( "RunningTimerEventSource: Stopped" )
 		new TimerEventSource( callback )
 	}
 

@@ -39,11 +39,11 @@ object ObservationEvent {
 	def apply( eventTime : DateTime ) : ObservationEvent = ObservationEvent( eventTime, Map() )
 }
 
-case class EventChain( id : String, events : NonEmptyList[ObservationEvent], data : Map[String, String] ) {
-	def ::( event : ObservationEvent ) = EventChain( id, event <:: events, data )
+case class EventChain( id : String, processName:String,events : NonEmptyList[ObservationEvent], data : Map[String, String] ) {
+	def ::( event : ObservationEvent ) = EventChain( id,processName,  event <:: events, data )
 	def select( property : String ) = data.get( property )
 
-	def update( f : Map[String, String] ⇒ Map[String, String] ) = new EventChain( id, events, f( data ) )
+	def update( f : Map[String, String] ⇒ Map[String, String] ) = new EventChain( id, processName,  events, f( data ) )
 
 	def interval = if ( events.tail.size == 0 ) new Interval( events.head.eventTime.getMillis(), events.head.eventTime.getMillis() + 1 ) else new Interval( events.head.eventTime, events.tail.last.eventTime )
 
@@ -52,7 +52,7 @@ case class EventChain( id : String, events : NonEmptyList[ObservationEvent], dat
 
 object EventChain {
 
-	def from( id : String, event : ObservationEvent ) = EventChain( id, event.wrapNel, Map.empty )
+	def from( id : String, name:String, event : ObservationEvent ) = EventChain( id, name,  event.wrapNel, Map.empty )
 }
 
 trait TimerEvent {
