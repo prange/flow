@@ -1,8 +1,6 @@
 package flow.businessrules
 import scala.collection.JavaConversions._
-
 import org.joda.time.Duration
-
 import flow.actor.OperatorState
 import flow.event.EventChain
 import flow.event.ObservationEvent
@@ -18,22 +16,41 @@ import weka.classifiers.bayes.AODE
 import weka.core.Attribute
 import weka.core.Instance
 import weka.core.Instances
+import flow.actor.OutputBuilder
+import flow.actor.InputBuilder
+import flow.actor.OperatorOutput
+import weka.core.FastVector
+import flow.actor.OperatorInput
+import flow.actor.Operator
+import flow.actor.OperatorBuilder
+import flow.actor.Context
+import flow.actor.InputPortId
+import flow.actor.PortBinding
+import flow.actor.OutputPortId
+import flow.actor.OperatorId
+import flow.actor.Routers._
+import scalaz._
+import Scalaz._
+
+object DatasetAttributes {
+	val brandAttName = "brand"
+    val modelAttName = "model"
+	val totalPriceAttName = "totalPrice"
+	val timeElapsedAttName = "totalTime"
+	val classAttName = "class"
+	val lastWaitingTimeAttName = "lastWaitingTime"
+	val dispositionAttName = "businessLocation|action"
+	val actionPathAttName = "path|action"
+	val readpointPathAttName = "readpoint|action"
+	val businessLocationPathAttName = "businessLocation|action"
+		
+	def occurrencesAttName(propertyName: String, propertyValue: String) = {
+		"occurrences|" + propertyName + "|" + propertyValue
+	}
+  
+}
 
 class ViolationPredictionState(dataset: Instances, classifier: AODE) extends OperatorState[Either[ProcessEndedEvent, ProcessAdvancedEvent], Option[PredictedViolationEvent]] {
-  def brandAttName = "brand"
-  def modelAttName = "model"
-  def totalPriceAttName = "totalPrice"
-  def timeElapsedAttName = "totalTime"
-  def classAttName = "class"
-  def lastWaitingTimeAttName = "lastWaitingTime"
-  def dispositionAttName = "businessLocation|action"
-  def actionPathAttName = "path|action"
-  def readpointPathAttName = "readpoint|action"
-  def businessLocationPathAttName = "businessLocation|action"
-
-  def occurrencesAttName(propertyName: String, propertyValue: String) = {
-    "occurrences|" + propertyName + "|" + propertyValue
-  }
 
   def apply(e: Either[ProcessEndedEvent, ProcessAdvancedEvent]): (Option[PredictedViolationEvent], ViolationPredictionState) = {
     e match {
@@ -65,23 +82,23 @@ class ViolationPredictionState(dataset: Instances, classifier: AODE) extends Ope
     for (a ← dataset.enumerateAttributes) {
 
       val attribute = a.asInstanceOf[Attribute]
-      if (attribute.name().equals(actionPathAttName))
+      if (attribute.name().equals(DatasetAttributes.actionPathAttName))
         instance.setValue(attribute, extractPath(eventchain, "action"));
-      else if (attribute.name().equals(readpointPathAttName))
+      else if (attribute.name().equals(DatasetAttributes.readpointPathAttName))
         instance.setValue(attribute, extractPath(eventchain, "readPoint"));
-      else if (attribute.name().equals(businessLocationPathAttName))
+      else if (attribute.name().equals(DatasetAttributes.businessLocationPathAttName))
         instance.setValue(attribute, extractPath(eventchain, "bizLocation"));
-      else if (attribute.name().equals(modelAttName))
+      else if (attribute.name().equals(DatasetAttributes.modelAttName))
         enrich(instance, attribute, "hrafnxservice:customerModel", eventchain.events.head)
-      else if (attribute.name().equals(totalPriceAttName))
+      else if (attribute.name().equals(DatasetAttributes.totalPriceAttName))
         enrich(instance, attribute, "hrafnxservice:totalPrice", eventchain.events.head)
-      else if (attribute.name().equals(brandAttName))
+      else if (attribute.name().equals(DatasetAttributes.brandAttName))
         enrich(instance, attribute, "hrafnxservice:customerBrand", eventchain.events.head)
-      else if (attribute.name().equals(dispositionAttName))
+      else if (attribute.name().equals(DatasetAttributes.dispositionAttName))
         enrich(instance, attribute, "disposition", eventchain.events.head)
-      else if (attribute.name().equals(lastWaitingTimeAttName))
+      else if (attribute.name().equals(DatasetAttributes.lastWaitingTimeAttName))
         instance.setValue(attribute, extractLastWaitingTime(eventchain));
-      else if (attribute.name().equals(classAttName))
+      else if (attribute.name().equals(DatasetAttributes.classAttName))
         instance.setValue(attribute, extractViolations(eventchain.events.head, e2eProcess).reduceLeft(_ + ", " + _));
     }
 
@@ -178,67 +195,68 @@ class ViolationPredictionState(dataset: Instances, classifier: AODE) extends Ope
   }
 
 }
-//class ViolationPredictionBuilder(id: String) extends OperatorBuilder {
-//
-//  def extractAttributeMetaData(attributeName: String) = {
-//    var attNameProcessed = false;
-//    attributeName.split("|").foldLeft((List[String]())) { (dataList, s) ⇒
-//      if (attNameProcessed) {
-//        s :: dataList
-//      } else {
-//        attNameProcessed = true
-//        dataList
-//      }
-//    }
-//  }
-//
-//  lazy val operator = {
-//    val inputRouter: PartialFunction[Any, Either[ProcessEndedEvent, ProcessAdvancedEvent]] = {
-//      case OperatorInput(_, e: ProcessEndedEvent) ⇒ Left(e)
-//      case OperatorInput(_, t: ProcessAdvancedEvent) ⇒ Right(t)
-//    }
-//
-//    val outputRouter: Option[PredictedViolationEvent] ⇒ List[OperatorOutput[PredictedViolationEvent]] = { o ⇒
-//      o.fold(e ⇒ List(OperatorOutput(id + ".updated", e)), List())
-//    }
-//    val dataset = createDatasetStructure()
-//    new Operator(id, inputRouter, outputRouter, new ViolationPredictionState(dataset, createPredictionModel(dataset)))
-//  }
-//
-//  val update = OutputBuilder(this, OutputPortId(id + ".updated"))
-//  val in = InputBuilder(this, InputPortId(id + ".in"))
-//
-//  def update(context: Context) = context + PortBinding(InputPortId(id + ".in"), OperatorId(id)) + operator
-//
-//  def createDatasetStructure(): Instances = {
-//    val atts = new FastVector()
-//
-//    atts.addElement(new Attribute(actionPathAttName, null: FastVector));
-//    atts.addElement(new Attribute(readpointPathAttName, null: FastVector));
-//    atts.addElement(new Attribute(businessLocationPathAttName, null: FastVector));
-//    atts.addElement(new Attribute(brandAttName, null: FastVector));
-//    atts.addElement(new Attribute(modelAttName, null: FastVector));
-//    atts.addElement(new Attribute(dispositionAttName, null: FastVector));
-//    atts.addElement(new Attribute(totalPriceAttName));
-//    atts.addElement(new Attribute(timeElapsedAttName));
-//    atts.addElement(new Attribute(lastWaitingTimeAttName));
-//
-//    val classAttribute = new Attribute(classAttName, null: FastVector)
-//    atts.addElement(classAttribute);
-//
-//    //Initializing dataset
-//    val data = new Instances("MyDataset", atts, 0)
-//    data.setClass(classAttribute)
-//    data
-//  }
-//
-//  def createPredictionModel(data: weka.core.Instances) = {
-//
-//    val classifier = new AODE()
-//
-//    classifier.buildClassifier(data)
-//
-//    classifier
-//  }
-//
-//}
+class ViolationPredictionBuilder(id: String) extends OperatorBuilder {
+
+  def extractAttributeMetaData(attributeName: String) = {
+    var attNameProcessed = false;
+    attributeName.split("|").foldLeft((List[String]())) { (dataList, s) ⇒
+      if (attNameProcessed) {
+        s :: dataList
+      } else {
+        attNameProcessed = true
+        dataList
+      }
+    }
+  }
+
+  lazy val operator = {
+
+    val inputRouter = handle[Either[ProcessEndedEvent, ProcessAdvancedEvent]]({
+    	case OperatorInput(_, e: ProcessEndedEvent) ⇒ Left(e)
+    	case OperatorInput(_, t: ProcessAdvancedEvent) ⇒ Right(t)
+    })
+
+    val outputRouter: Option[PredictedViolationEvent] ⇒ List[OperatorOutput] = { o ⇒
+      o.fold(e ⇒ List(OperatorOutput(id + ".updated", e)), List())
+    }
+    val dataset = createDatasetStructure()
+    new Operator(id, inputRouter, outputRouter, new ViolationPredictionState(dataset, createPredictionModel(dataset)))
+  }
+
+  val update = OutputBuilder(this, OutputPortId(id + ".updated"))
+  val in = InputBuilder(this, InputPortId(id + ".in"))
+
+  def update(context: Context) = context + PortBinding(InputPortId(id + ".in"), OperatorId(id)) + operator
+
+  def createDatasetStructure(): Instances = {
+    val atts = new FastVector()
+
+    atts.addElement(new Attribute(DatasetAttributes.actionPathAttName, null: FastVector));
+    atts.addElement(new Attribute(DatasetAttributes.readpointPathAttName, null: FastVector));
+    atts.addElement(new Attribute(DatasetAttributes.businessLocationPathAttName, null: FastVector));
+    atts.addElement(new Attribute(DatasetAttributes.brandAttName, null: FastVector));
+    atts.addElement(new Attribute(DatasetAttributes.modelAttName, null: FastVector));
+    atts.addElement(new Attribute(DatasetAttributes.dispositionAttName, null: FastVector));
+    atts.addElement(new Attribute(DatasetAttributes.totalPriceAttName));
+    atts.addElement(new Attribute(DatasetAttributes.timeElapsedAttName));
+    atts.addElement(new Attribute(DatasetAttributes.lastWaitingTimeAttName));
+
+    val classAttribute = new Attribute(DatasetAttributes.classAttName, null: FastVector)
+    atts.addElement(classAttribute);
+
+    //Initializing dataset
+    val data = new Instances("MyDataset", atts, 0)
+    data.setClass(classAttribute)
+    data
+  }
+
+  def createPredictionModel(data: weka.core.Instances) = {
+
+    val classifier = new AODE()
+
+    classifier.buildClassifier(data)
+
+    classifier
+  }
+
+}
