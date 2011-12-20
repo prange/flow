@@ -3,7 +3,7 @@ package flow.event
 import scalaz._
 import Scalaz._
 
-object Predicates {
+trait Predicates {
 
 	val where = new WhereType()
 

@@ -88,19 +88,19 @@ class HttpClient( domain : String, url : String, port : Int ) {
 	}
 }
 
-class DirectTest( ratio : Int, sourceName : String, engine : RunningEngine ) {
+class DirectTest( ratio : Int, sourceName : String, engine : RunningOperatorEngine ) {
 	def run = {
 		val sim = EventSimulator.init( Time.now.unsafePerformIO, ratio )
-		sim.start( engine.!( sourceName, _ ), println( "Simulation ended" ) )
+		sim.start( engine.handle( sourceName, _ ), println( "Simulation ended" ) )
 	}
 }
 
-class RabbitMQTest( sourceName : String, engine : RunningEngine, sim : EventSimulator, publisher : XmlEvent ⇒ IO[Unit] ) {
+class RabbitMQTest( sourceName : String, engine : RunningOperatorEngine, sim : EventSimulator, publisher : XmlEvent ⇒ IO[Unit] ) {
 	def run = {
 		import EventSimulator._
 		val conn = FlowAmqp.connector( username, password, address ).cfg( testSetup andThen widgetSetup ).start().unsafePerformIO
 
-		val source = new ReadyAmqpConsumer( "engineConsumer", "test", s ⇒ engine.!( "test", stringToXmlEvent( s ) ) ).start( conn.connx ).unsafePerformIO
+		val source = new ReadyAmqpConsumer( "engineConsumer", "test", s ⇒ engine.handle( "test", stringToXmlEvent( s ) ) ).start( conn.connx ).unsafePerformIO
 		val client = new ReadyAmqpProducer( "test", "test" ).start( conn.connx ).unsafePerformIO
 
 		sim.start( publisher, println( "Simulation ended" ) )

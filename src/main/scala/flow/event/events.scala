@@ -3,7 +3,6 @@ import org.joda.time.DateTime
 import org.joda.time.Interval
 import com.codecommit.antixml._
 import flow.promises._
-import flow.statistics.Bucket
 import flow._
 import scalaz.Scalaz._
 import scalaz._
@@ -73,7 +72,6 @@ case class ProcessStartedEvent( timestamp : DateTime, eventchain : EventChain ) 
 case class ProcessAdvancedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 case class ProcessEndedEvent( timestamp : DateTime, eventchain : EventChain ) extends ProcessEvent
 
-case class UpdatedHistogramEvent( histogram : List[Bucket] )
 case class PromiseViolatedEvent( promise : Promise, process : ProcessAdvancedEvent )
 case class PredictedViolationEvent( violations : List[( String, Double )], process : ProcessAdvancedEvent )
 case class UpdatedTrainingsetEvent( promise: Promise, dataset: Instances)

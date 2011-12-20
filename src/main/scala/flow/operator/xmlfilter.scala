@@ -6,13 +6,9 @@ import scalaz.Validation
 import com.codecommit.antixml._
 import flow.event.XmlEvent
 
-object Filter {
-
-}
 
 
-
-case class PropertyExistsTest( property : Selector[Elem] ) extends Predicate[XmlEvent] {
+case class PropertyExistsTest( property : Selector[Elem] ) extends (XmlEvent=>Boolean) {
 	def apply( event : XmlEvent ) = {
 		val extract = event select ( _ \ property )
 		val e2 = extract some { _ ⇒ true } none { false }
@@ -20,7 +16,7 @@ case class PropertyExistsTest( property : Selector[Elem] ) extends Predicate[Xml
 	}
 }
 
-class OperatorTest[T]( property : Selector[Elem], toT : String ⇒ T, operator : ( T, T ) ⇒ Boolean, value : T ) extends Predicate[XmlEvent]{
+class OperatorTest[T]( property : Selector[Elem], toT : String ⇒ T, operator : ( T, T ) ⇒ Boolean, value : T ) extends (XmlEvent=>Boolean){
 
 	def apply( event : XmlEvent ) = {
 		val extract = event select ( _ \ property)
